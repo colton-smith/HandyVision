@@ -29,7 +29,7 @@ def get_position(hands, capture, frame_height, frame_width, mp_hands):
             label[label_num] = MessageToDict(i)['classification'][0]['label']
             label_num += 1
             if label_num > 1:
-                continue
+                break
 
         if len(frame_hands.multi_handedness) == 2:
         
