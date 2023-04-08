@@ -2,8 +2,21 @@
 
 Hand landmark helpers.
 """
-from enum import IntEnum, unique
+from enum import Enum, IntEnum, auto, unique
+from google.protobuf.json_format import MessageToDict
+
 import numpy as np
+
+
+@unique
+class Handedness(str, Enum):
+    """ 
+    String enum representing handedness.
+    Python 3.11 supports StrEnum, not the case with Python 3.10. 
+    """
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
+
 
 @unique
 class HandLandmarkName(IntEnum):
@@ -45,15 +58,41 @@ class HandLandmarkName(IntEnum):
     PINKY_FINGER_TIP = 20
 
 
-class HandLandmarks:
+def get_handedness(mp_handedness) -> Handedness:
+    """ Extract handedness from media pipe handedness output 
+    """
+    label: str = MessageToDict(mp_handedness)["classification"][0]["label"]
+    label = label.upper()
+    return Handedness[label]
+
+
+class HandState:
     """ 
     Struct representing all hand landmarks generated 
     by mediapipe.
+
+    landmarks: output.landmark 
+    handedness: output.handedness
     """
-    def __init__(self, landmarks):
+    def __init__(self, landmarks, handedness):
+        self.handedness = get_handedness(handedness)
         self.landmarks = landmarks
 
     def get(self, index: int):
         """ Get landmark from index
         """
         return self.landmarks[index]
+
+    def is_left(self):
+        """ Return true if these landmarks are for a left hand
+        """
+        if self.handedness == Handedness.LEFT:
+            return True
+        return False
+    
+    def is_right(self):
+        """ Return true if these landmarks are for a right hand
+        """
+        if self.handedness == Handedness.RIGHT:
+            return True
+        return False

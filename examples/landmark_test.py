@@ -2,33 +2,41 @@ import cv2 as cv
 import mediapipe as mp
 import handyvision as hv
 
-def process_frame(hand_model, frame: cv.Mat):
+from typing import Dict
+
+def get_hand_states(hand_model, frame: cv.Mat):
     """ Pass frame through mediapipe and play with results 
+
+    Return { LEFT: HandState, RIGHT: HandState } dict, with HandState == None 
+    if it was not in the frame 
     """
-    frame = cv.flip(frame, 1)
     frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     frame_hands = hand_model.process(frame)
 
+    hands: Dict[str, hv.HandState] = {
+        hv.Handedness.LEFT.name: None, 
+        hv.Handedness.RIGHT.name: None
+    }
+
     # Just grab the first hand
+    if frame is None or frame.size == 0:
+        return hands
+    
     if frame_hands is None:
-        return 
-    
+        return hands 
+
+    # Question: does multi_hand_landmarks == None -> multi_handedness == None    
     if frame_hands.multi_hand_landmarks is None:
-        return 
+        return hands
+
+    results = list(zip(frame_hands.multi_hand_landmarks, frame_hands.multi_handedness))
+    for mp_landmark, mp_handedness in results:
+        hand = hv.HandState(mp_landmark.landmark, mp_handedness)
+        hands[hand.handedness.name] = hand
     
-    # Collect the first hand if there is one 
-    mp_landmarks = frame_hands.multi_hand_landmarks[0].landmark
-    landmarks = hv.HandLandmarks(mp_landmarks)
-
-    landmark_ids = [e for e in hv.HandLandmarkName]
-    print("--- HAND 0 LANDMARK READINGS --- ")
-    for id in landmark_ids:
-        print(f"{id.name}: {landmarks.get(id)}")
-    print("---") 
-
+    return hands
 
 def main():
-
     # Open video capture using webcam (default)
     cam = hv.Camera(0)
   
@@ -43,8 +51,17 @@ def main():
 
     while True:
         got_frame, frame = cam.get_frame()
-        frame_height, frame_width, c = frame.shape 
-        process_frame(hands, frame)
+        frame = cv.flip(frame, 1)
+        
+        hand_data: Dict[str, hv.HandState] = get_hand_states(hands, frame)
+
+        for name, data in hand_data.items():
+            if data is None:
+                print(f"{name} not in frame")
+            else:
+                print(f"{name} in frame!")
+                fing = hv.HandLandmarkName.MIDDLE_FINGER_TIP
+                print(f"{fing.name}: {data.get(fing)}")
 
         # Display frame 
         cv.imshow("Hands", frame)
