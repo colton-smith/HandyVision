@@ -18,7 +18,6 @@ def get_hand_states(hand_model, frame: cv.Mat):
         hv.Handedness.RIGHT.name: None
     }
 
-    # Just grab the first hand
     if frame is None or frame.size == 0:
         return hands
     
@@ -70,4 +69,3 @@ def main():
 
 if __name__=="__main__":
     main()
-    
