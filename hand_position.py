@@ -133,8 +133,8 @@ def fingers_up(hand1, hand2):
         right = True
 
     # thumb, index, middle, ring, pinky
-    left_fingers_up  = [False, False, False, False, False]
-    right_fingers_up = [False, False, False, False, False]
+    left_fingers_up  = [None, None, None, None, None]
+    right_fingers_up = [None, None, None, None, None]
 
     if left:
         # Thumb -->
@@ -142,7 +142,7 @@ def fingers_up(hand1, hand2):
         l_thumb_tip  = [left_hand[4], left_hand[5]]
         l_index_k    = [left_hand[6], left_hand[7]]
         l_thumb_angle_rad = np.arctan2(l_thumb_tip[1] - l_thumb_base[1], l_thumb_tip[0]-l_thumb_base[0]) - \
-                          np.arctan2(l_index_k[1]-l_thumb_base[1], l_index_k[0]-l_thumb_base[0])
+                            np.arctan2(l_index_k[1]-l_thumb_base[1], l_index_k[0]-l_thumb_base[0])
         l_thumb_angle_deg  = np.abs(l_thumb_angle_rad*180.0/np.pi)
         if l_thumb_angle_deg > 180.0:
             l_thumb_angle_deg = 360 - l_thumb_angle_deg
@@ -165,16 +165,23 @@ def fingers_up(hand1, hand2):
 
         if l_thumb_angle_deg > 40:
             left_fingers_up[0] = True
+        else : left_fingers_up[0] = False
+
         if l_wrist_index_t > 1.5 * l_wrist_index_k:
             left_fingers_up[1] = True
+        else : left_fingers_up[1] = False
+
         if l_wrist_middle_t > 1.5 * l_wrist_middle_k:
             left_fingers_up[2] = True
+        else : left_fingers_up[2] = False
+
         if l_wrist_ring_t > 1.5 * l_wrist_ring_k:
             left_fingers_up[3] = True
+        else : left_fingers_up[3] = False
+
         if l_wrist_pinky_t > 1.5 * l_wrist_pinky_k:
             left_fingers_up[4] = True
-
-        
+        else : left_fingers_up[4] = False
     
     if right:
         # Thumb -->
@@ -182,7 +189,7 @@ def fingers_up(hand1, hand2):
         r_thumb_tip  = [right_hand[4], right_hand[5]]
         r_index_k    = [right_hand[6], right_hand[7]]
         r_thumb_angle_rad = np.arctan2(r_thumb_tip[1] - r_thumb_base[1], r_thumb_tip[0]-r_thumb_base[0]) - \
-                          np.arctan2(r_index_k[1]-r_thumb_base[1], r_index_k[0]-r_thumb_base[0])
+                            np.arctan2(r_index_k[1]-r_thumb_base[1], r_index_k[0]-r_thumb_base[0])
         r_thumb_angle_deg  = np.abs(r_thumb_angle_rad*180.0/np.pi)
         if r_thumb_angle_deg > 180.0:
             r_thumb_angle_deg = 360 - r_thumb_angle_deg
@@ -205,17 +212,67 @@ def fingers_up(hand1, hand2):
 
         if r_thumb_angle_deg > 45:
             right_fingers_up[0] = True
+        else : right_fingers_up[0] = False
+
         if r_wrist_index_t > 1.5 * r_wrist_index_k:
             right_fingers_up[1] = True
+        else : right_fingers_up[1] = False
+
         if r_wrist_middle_t > 1.5 * r_wrist_middle_k:
             right_fingers_up[2] = True
+        else : right_fingers_up[2] = False
+
         if r_wrist_ring_t > 1.5 * r_wrist_ring_k:
             right_fingers_up[3] = True
+        else : right_fingers_up[3] = False
+
         if r_wrist_pinky_t > 1.5 * r_wrist_pinky_k:
             right_fingers_up[4] = True
+        else : right_fingers_up[4] = False
 
     return left_fingers_up, right_fingers_up
 
+def get_gesture(left_fingers, right_fingers):
+    gesture_left = 'unrecognized gesture'
+    gesture_right = 'unrecognized gesture'
+
+    # Finding Left Gesture
+    if   np.array_equiv(left_fingers, [False, False, False, False, False]) : gesture_left = 'fist'
+    elif np.array_equiv(left_fingers, [False, True , False, False, False]) : gesture_left = 'point'
+    elif np.array_equiv(left_fingers, [False, True , True , False, False]) : gesture_left = 'peace'
+    elif np.array_equiv(left_fingers, [False, True , True , True , False]) : gesture_left = 'three'
+    elif np.array_equiv(left_fingers, [False, True , True , True , True ]) : gesture_left = 'four'
+    elif np.array_equiv(left_fingers, [True , True , True , True , True ]) : gesture_left = 'spread'
+    elif np.array_equiv(left_fingers, [True , False, False, False, False]) : gesture_left = 'thumb'
+    elif np.array_equiv(left_fingers, [False, True , False, False, True ]) : gesture_left = 'rock'
+    elif np.array_equiv(left_fingers, [True , True , False, False, True ]) : gesture_left = 'love'
+    elif np.array_equiv(left_fingers, [True , True , True , False, False]) : gesture_left = 'gun'
+    elif np.array_equiv(left_fingers, [False, False, True , True , True ]) : gesture_left = 'splash'
+    elif np.array_equiv(left_fingers, [False, False, False, False, True ]) : gesture_left = 'pinky'
+    elif np.array_equiv(left_fingers, [True , False, False, False, True ]) : gesture_left = 'hang loose'
+    elif np.array_equiv(left_fingers, [False, False, True , False, False]) : gesture_left = 'flipoff'
+    elif np.array_equiv(left_fingers, [None , None , None , None , None ]) : gesture_left = 'not in frame'
+    else : gesture_left = 'unrecognized gesture'
+
+    # Finding right gesture
+    if   np.array_equiv(right_fingers, [False, False, False, False, False]) : gesture_right = 'fist'
+    elif np.array_equiv(right_fingers, [False, True , False, False, False]) : gesture_right = 'point'
+    elif np.array_equiv(right_fingers, [False, True , True , False, False]) : gesture_right = 'peace'
+    elif np.array_equiv(right_fingers, [False, True , True , True , False]) : gesture_right = 'three'
+    elif np.array_equiv(right_fingers, [False, True , True , True , True ]) : gesture_right = 'four'
+    elif np.array_equiv(right_fingers, [True , True , True , True , True ]) : gesture_right = 'spread'
+    elif np.array_equiv(right_fingers, [True , False, False, False, False]) : gesture_right = 'thumb'
+    elif np.array_equiv(right_fingers, [False, True , False, False, True ]) : gesture_right = 'rock'
+    elif np.array_equiv(right_fingers, [True , True , False, False, True ]) : gesture_right = 'love'
+    elif np.array_equiv(right_fingers, [True , True , True , False, False]) : gesture_right = 'gun'
+    elif np.array_equiv(right_fingers, [False, False, True , True , True ]) : gesture_right = 'splash'
+    elif np.array_equiv(right_fingers, [False, False, False, False, True ]) : gesture_right = 'pinky'
+    elif np.array_equiv(right_fingers, [True , False, False, False, True ]) : gesture_right = 'hang loose'
+    elif np.array_equiv(right_fingers, [False, False, True , False, False]) : gesture_right = 'flipoff'
+    elif np.array_equiv(right_fingers, [None , None , None , None , None ]) : gesture_right = 'not in frame'
+    else : gesture_right = 'unrecognized gesture'
+
+    return gesture_left, gesture_right
 
 def main():
 
@@ -258,21 +315,29 @@ def main():
         left_fingers_p1, right_fingers_p1 = fingers_up(hand1_p1, hand2_p1)
         left_fingers_p2, right_fingers_p2 = fingers_up(hand1_p2, hand2_p2)
 
-        print("Player 1: ", left_fingers_p1, right_fingers_p1)
-        print("Player 2: ", left_fingers_p2, right_fingers_p2)
+        gesture_name_l_p1, gesture_name_r_p1 = get_gesture(left_fingers_p1, right_fingers_p1)
+        gesture_name_l_p2, gesture_name_r_p2 = get_gesture(left_fingers_p2, right_fingers_p2)
 
+        # Any test to be written on the frame should be written after this flip
         frame = cv.flip(frame, 1)
-        
-        text_p1 = "Testing P1"
-        text_p2 = "Testing P2"
-        coordinates_p1 = (50,50)
-        coordinates_p2 = (50 + frame_width//2,50)
+        coordinates_l_p1 = (50,50)
+        coordinates_r_p1 = (50,100)
+        coordinates_l_p2 = (50 + frame_width//2, 50)
+        coordinates_r_p2 = (50 + frame_width//2, 100)
         font = cv.FONT_HERSHEY_SIMPLEX
         fontScale = 1
         color = (255,0,255)
         thickness = 2
-        frame = cv.putText(frame, text_p1, coordinates_p1, font, fontScale, color, thickness, cv.LINE_AA)
-        frame = cv.putText(frame, text_p2, coordinates_p2, font, fontScale, color, thickness, cv.LINE_AA)
+        frame = cv.putText(frame, gesture_name_l_p1, coordinates_l_p1, font, fontScale, color, thickness, cv.LINE_AA)
+        frame = cv.putText(frame, gesture_name_r_p1, coordinates_r_p1, font, fontScale, color, thickness, cv.LINE_AA)
+        frame = cv.putText(frame, gesture_name_l_p2, coordinates_l_p2, font, fontScale, color, thickness, cv.LINE_AA)
+        frame = cv.putText(frame, gesture_name_r_p2, coordinates_r_p2, font, fontScale, color, thickness, cv.LINE_AA)
+
+        if gesture_name_l_p1 == 'flipoff' or gesture_name_r_p1 == 'flipoff':
+            frame[:, frame_width//2:frame_width-1, 2] = 255
+
+        if gesture_name_l_p2 == 'flipoff' or gesture_name_r_p2 == 'flipoff':
+            frame[:, 0:frame_width//2, 2] = 255
 
         cv.imshow("Game Window", frame)
         
