@@ -38,6 +38,7 @@ def get_hand_states(hand_model, frame: cv.Mat):
 def main():
     # Open video capture using webcam (default)
     cam = hv.Camera(0)
+    cam.set_auto_focus(False)
   
     # Set up hands model for image capture
     mp_hands = mp.solutions.hands

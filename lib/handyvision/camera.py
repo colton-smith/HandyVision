@@ -28,6 +28,12 @@ class Camera:
         """
         return self.camera.read()
     
+    def set_auto_focus(self, on: bool):
+        """ Set auto focus
+        """
+        af_value = 1 if on else 0
+        self.camera.set(cv.CAP_PROP_AUTOFOCUS, af_value)
+
     def release(self):
         """ Release camera, also called when object is destroyed
         """
