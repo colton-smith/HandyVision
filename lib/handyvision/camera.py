@@ -7,6 +7,8 @@ import numpy as np
 from typing import Tuple
 
 class Camera:
+    """ Thin wrapper around cv.VideoCapture
+    """
     def __init__(self, camera_idx: int = 0, name: str =None):
         self.index = camera_idx
         self.name = f"CAM_{self.index}" if name is None else name
