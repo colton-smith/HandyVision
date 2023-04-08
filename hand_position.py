@@ -3,14 +3,7 @@ import mediapipe as mp
 import numpy as np
 from google.protobuf.json_format import MessageToDict
 
-def get_position(hands, capture, frame_height, frame_width, mp_hands):
-    got_frame, frame = capture.read() # Get frame to analyze
-
-    # Making sure capture got valid frame before trying to analyze
-    if not got_frame:
-        print("Empty Frame")
-        
-
+def get_position(hands, frame, frame_height, frame_width, mp_hands):
     # Need to flip and convert frame for mp_hands to process the image
     frame = cv.flip(frame, 1)
     frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -19,7 +12,6 @@ def get_position(hands, capture, frame_height, frame_width, mp_hands):
 
     # Convert back to original colour space for display
     frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
-    cv.imshow('MediaPipe Hands', frame)
 
     if frame_hands.multi_hand_landmarks: 
 
@@ -33,12 +25,12 @@ def get_position(hands, capture, frame_height, frame_width, mp_hands):
 
         if len(frame_hands.multi_handedness) == 2:
         
-            # 0, 2, 4 used for thumb -- 0, 5, 8 used for index -- 0, 9, 12 used for middle -- 0, 13, 16 used for ring -- 0, 17, 20 used for pinky
+            # 1, 4, 5 used for thumb -- 0, 5, 8 used for index -- 0, 9, 12 used for middle -- 0, 13, 16 used for ring -- 0, 17, 20 used for pinky
             return [frame_hands.multi_hand_landmarks[0].landmark[0].x * frame_width,    # 0
                     frame_hands.multi_hand_landmarks[0].landmark[0].y * frame_height,   # 1
 
-                    frame_hands.multi_hand_landmarks[0].landmark[2].x * frame_width,    # 2
-                    frame_hands.multi_hand_landmarks[0].landmark[2].y * frame_height,   # 3
+                    frame_hands.multi_hand_landmarks[0].landmark[1].x * frame_width,    # 2
+                    frame_hands.multi_hand_landmarks[0].landmark[1].y * frame_height,   # 3
                     frame_hands.multi_hand_landmarks[0].landmark[4].x * frame_width,    # 4
                     frame_hands.multi_hand_landmarks[0].landmark[4].y * frame_height,   # 5
  
@@ -65,8 +57,8 @@ def get_position(hands, capture, frame_height, frame_width, mp_hands):
                    [frame_hands.multi_hand_landmarks[1].landmark[0].x * frame_width, 
                     frame_hands.multi_hand_landmarks[1].landmark[0].y * frame_height,
 
-                    frame_hands.multi_hand_landmarks[1].landmark[2].x * frame_width, 
-                    frame_hands.multi_hand_landmarks[1].landmark[2].y * frame_height,
+                    frame_hands.multi_hand_landmarks[1].landmark[1].x * frame_width, 
+                    frame_hands.multi_hand_landmarks[1].landmark[1].y * frame_height,
                     frame_hands.multi_hand_landmarks[1].landmark[4].x * frame_width, 
                     frame_hands.multi_hand_landmarks[1].landmark[4].y * frame_height,
 
@@ -95,8 +87,8 @@ def get_position(hands, capture, frame_height, frame_width, mp_hands):
             return [frame_hands.multi_hand_landmarks[0].landmark[0].x * frame_width, 
                     frame_hands.multi_hand_landmarks[0].landmark[0].y * frame_height,
 
-                    frame_hands.multi_hand_landmarks[0].landmark[2].x * frame_width, 
-                    frame_hands.multi_hand_landmarks[0].landmark[2].y * frame_height,
+                    frame_hands.multi_hand_landmarks[0].landmark[1].x * frame_width, 
+                    frame_hands.multi_hand_landmarks[0].landmark[1].y * frame_height,
                     frame_hands.multi_hand_landmarks[0].landmark[4].x * frame_width, 
                     frame_hands.multi_hand_landmarks[0].landmark[4].y * frame_height,
 
@@ -145,7 +137,16 @@ def fingers_up(hand1, hand2):
     right_fingers_up = [False, False, False, False, False]
 
     if left:
-        # TODO: Handle thumbs up case
+        # Thumb -->
+        l_thumb_base = [left_hand[2], left_hand[3]]
+        l_thumb_tip  = [left_hand[4], left_hand[5]]
+        l_index_k    = [left_hand[6], left_hand[7]]
+        l_thumb_angle_rad = np.arctan2(l_thumb_tip[1] - l_thumb_base[1], l_thumb_tip[0]-l_thumb_base[0]) - \
+                          np.arctan2(l_index_k[1]-l_thumb_base[1], l_index_k[0]-l_thumb_base[0])
+        l_thumb_angle_deg  = np.abs(l_thumb_angle_rad*180.0/np.pi)
+        if l_thumb_angle_deg > 180.0:
+            l_thumb_angle_deg = 360 - l_thumb_angle_deg
+
         # Index Finger --> 0, 6, 1, 7 = knuckle -- 0, 8, 1, 9 = tip
         l_wrist_index_k = np.sqrt(((left_hand[0] - left_hand[6])**2) + ((left_hand[1] - left_hand[7])**2))
         l_wrist_index_t = np.sqrt(((left_hand[0] - left_hand[8])**2) + ((left_hand[1] - left_hand[9])**2))
@@ -162,6 +163,8 @@ def fingers_up(hand1, hand2):
         l_wrist_pinky_k = np.sqrt(((left_hand[0] - left_hand[18])**2) + ((left_hand[1] - left_hand[19])**2))
         l_wrist_pinky_t = np.sqrt(((left_hand[0] - left_hand[20])**2) + ((left_hand[1] - left_hand[21])**2))
 
+        if l_thumb_angle_deg > 40:
+            left_fingers_up[0] = True
         if l_wrist_index_t > 1.5 * l_wrist_index_k:
             left_fingers_up[1] = True
         if l_wrist_middle_t > 1.5 * l_wrist_middle_k:
@@ -170,10 +173,20 @@ def fingers_up(hand1, hand2):
             left_fingers_up[3] = True
         if l_wrist_pinky_t > 1.5 * l_wrist_pinky_k:
             left_fingers_up[4] = True
+
         
     
     if right:
-        # TODO: Handle thumbs up case
+        # Thumb -->
+        r_thumb_base = [right_hand[2], right_hand[3]]
+        r_thumb_tip  = [right_hand[4], right_hand[5]]
+        r_index_k    = [right_hand[6], right_hand[7]]
+        r_thumb_angle_rad = np.arctan2(r_thumb_tip[1] - r_thumb_base[1], r_thumb_tip[0]-r_thumb_base[0]) - \
+                          np.arctan2(r_index_k[1]-r_thumb_base[1], r_index_k[0]-r_thumb_base[0])
+        r_thumb_angle_deg  = np.abs(r_thumb_angle_rad*180.0/np.pi)
+        if r_thumb_angle_deg > 180.0:
+            r_thumb_angle_deg = 360 - r_thumb_angle_deg
+
         # Index Finger --> 0, 6, 1, 7 = knuckle -- 0, 8, 1, 9 = tip
         r_wrist_index_k = np.sqrt(((right_hand[0] - right_hand[6])**2) + ((right_hand[1] - right_hand[7])**2))
         r_wrist_index_t = np.sqrt(((right_hand[0] - right_hand[8])**2) + ((right_hand[1] - right_hand[9])**2))
@@ -190,6 +203,8 @@ def fingers_up(hand1, hand2):
         r_wrist_pinky_k = np.sqrt(((right_hand[0] - right_hand[18])**2) + ((right_hand[1] - right_hand[19])**2))
         r_wrist_pinky_t = np.sqrt(((right_hand[0] - right_hand[20])**2) + ((right_hand[1] - right_hand[21])**2))
 
+        if r_thumb_angle_deg > 45:
+            right_fingers_up[0] = True
         if r_wrist_index_t > 1.5 * r_wrist_index_k:
             right_fingers_up[1] = True
         if r_wrist_middle_t > 1.5 * r_wrist_middle_k:
@@ -204,17 +219,26 @@ def fingers_up(hand1, hand2):
 
 def main():
 
-    hands = mp.solutions.hands
+    hands_p1 = mp.solutions.hands
+    hands_p2 = mp.solutions.hands
 
     # Open video capture using webcam (default)
     capture = cv.VideoCapture(0)
     got_frame, frame = capture.read()
     frame_height, frame_width, c = frame.shape 
 
-    mp_hands = mp.solutions.hands
+    mp_hands_p1 = mp.solutions.hands
+    mp_hands_p2 = mp.solutions.hands
 
     # Setting up hands model for video capture
-    hands = mp_hands.Hands(
+    hands_p1 = mp_hands_p1.Hands(
+        model_complexity = 0,
+        max_num_hands = 2,
+        min_detection_confidence = 0.5,
+        min_tracking_confidence = 0.5
+    )
+
+    hands_p2 = mp_hands_p1.Hands(
         model_complexity = 0,
         max_num_hands = 2,
         min_detection_confidence = 0.5,
@@ -222,10 +246,35 @@ def main():
     )
 
     while True:
-        hand1, hand2 = get_position(hands, capture, frame_height, frame_width, mp_hands)
-        left_fingers, right_fingers = fingers_up(hand1, hand2)
+        got_frame, frame = got_frame, frame = capture.read()
+        
+        # These are backwards from expected because we have to flip the frame so when it displays it looks like a mirror
+        frame_p2 = frame[:, 0:frame_width//2]
+        frame_p1 = frame[:, frame_width//2:frame_width-1]
+        
+        hand1_p1, hand2_p1 = get_position(hands_p1, frame_p1, frame_height, frame_width//2, mp_hands_p1)
+        hand1_p2, hand2_p2 = get_position(hands_p2, frame_p2, frame_height, frame_width//2, mp_hands_p2)
 
-        print(left_fingers, right_fingers)
+        left_fingers_p1, right_fingers_p1 = fingers_up(hand1_p1, hand2_p1)
+        left_fingers_p2, right_fingers_p2 = fingers_up(hand1_p2, hand2_p2)
+
+        print("Player 1: ", left_fingers_p1, right_fingers_p1)
+        print("Player 2: ", left_fingers_p2, right_fingers_p2)
+
+        frame = cv.flip(frame, 1)
+        
+        text_p1 = "Testing P1"
+        text_p2 = "Testing P2"
+        coordinates_p1 = (50,50)
+        coordinates_p2 = (50 + frame_width//2,50)
+        font = cv.FONT_HERSHEY_SIMPLEX
+        fontScale = 1
+        color = (255,0,255)
+        thickness = 2
+        frame = cv.putText(frame, text_p1, coordinates_p1, font, fontScale, color, thickness, cv.LINE_AA)
+        frame = cv.putText(frame, text_p2, coordinates_p2, font, fontScale, color, thickness, cv.LINE_AA)
+
+        cv.imshow("Game Window", frame)
         
         if cv.waitKey(1) & 0xff == ord('q'):
             capture.release()
