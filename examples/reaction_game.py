@@ -184,8 +184,8 @@ def main():
                     state = GameState.DISPLAY_GESTURE
 
             case GameState.DISPLAY_GESTURE:
-                compare_gesture_l = hv.get_random_gesture()
-                compare_gesture_r = hv.get_random_gesture()
+                compare_gesture_l = hv.get_random_gesture([hv.Gesture.FLIPOFF])
+                compare_gesture_r = hv.get_random_gesture([hv.Gesture.FLIPOFF])
                 
                 left_icon = icon_manager.icon_for_gesture(hv.Handedness.LEFT, compare_gesture_l)
                 right_icon = icon_manager.icon_for_gesture(hv.Handedness.RIGHT, compare_gesture_r)

@@ -137,8 +137,8 @@ def get_string_from_gesture(gesture: Gesture) -> str:
         return gesture.name
 
 
-def get_random_gesture() -> Gesture:
+def get_random_gesture(exclude: List[Gesture] = []) -> Gesture:
     """ Return a random gesture 
     """
-    possible_gestures = [g for g in Gesture]
+    possible_gestures = [g for g in Gesture if g not in exclude]
     return possible_gestures[np.random.randint(0, len(possible_gestures))]
