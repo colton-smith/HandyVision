@@ -4,6 +4,7 @@ import handyvision as hv
 
 from typing import Dict
 
+
 def get_hand_states(hand_model, frame: cv.Mat):
     """ Pass frame through mediapipe and play with results 
 
@@ -13,9 +14,9 @@ def get_hand_states(hand_model, frame: cv.Mat):
     frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     frame_hands = hand_model.process(frame)
 
-    hands: Dict[str, hv.HandState] = {
-        hv.Handedness.LEFT.name: None, 
-        hv.Handedness.RIGHT.name: None
+    hands: Dict[hv.Handedness, hv.HandState] = {
+        hv.Handedness.LEFT: None, 
+        hv.Handedness.RIGHT: None
     }
 
     if frame is None or frame.size == 0:
@@ -31,7 +32,7 @@ def get_hand_states(hand_model, frame: cv.Mat):
     results = list(zip(frame_hands.multi_hand_landmarks, frame_hands.multi_handedness))
     for mp_landmark, mp_handedness in results:
         hand = hv.HandState(mp_landmark.landmark, mp_handedness)
-        hands[hand.handedness.name] = hand
+        hands[hand.handedness] = hand
     
     return hands
 
@@ -43,8 +44,12 @@ def detect_digits(
     """ Determine what fingers are up given hand landmarks
 
     Optionally provide custom parameters.
+    Return hand pose in NONE state if hand is None
     """
     hand_pose: hv.HandPose = hv.HandPose()
+    if hand is None: 
+        return hand_pose
+
     thumb_extended = hv.is_thumb_extended(hand, opt.thumb_extended_angle_threshold)
     hand_pose.set(hv.Finger.THUMB, thumb_extended)
 
@@ -53,6 +58,7 @@ def detect_digits(
         hand_pose.set(finger, extended)
 
     return hand_pose
+
 
 def main():
     # Open video capture using webcam (default)
@@ -75,16 +81,21 @@ def main():
             continue
 
         frame = cv.flip(frame, 1)
-        hand_data: Dict[str, hv.HandState] = get_hand_states(hands, frame)
 
-        for name, data in hand_data.items():
-            if data is None:
-                continue
-            else:
-                print(f"{name} in frame!")
-                pose: hv.HandPose = detect_digits(data)
-                print(f"{name} digit states: {pose.get_tuple()}")
-    
+        # Calculate hand landmarks
+        hand_data: Dict[hv.Handedness, hv.HandState] = get_hand_states(hands, frame)
+
+        # Calculate hand pose / gesture
+        left_state = hand_data[hv.Handedness.LEFT]
+        left_pose = detect_digits(left_state)
+        left_gesture = hv.get_gesture_string(left_pose)
+
+        right_state = hand_data[hv.Handedness.RIGHT]
+        right_pose = detect_digits(right_state)
+        right_gesture = hv.get_gesture_string(right_pose)
+
+        print(f"LEFT: {left_gesture} \t RIGHT: {right_gesture}")
+
         # Display frame 
         cv.imshow("Hands", frame)
         if cv.waitKey(1) & 0xff == ord('q'):

@@ -13,9 +13,7 @@ from google.protobuf.json_format import MessageToDict
 
 @unique
 class Handedness(str, Enum):
-    """ 
-    String enum representing handedness.
-    Python 3.11 supports StrEnum, not the case with Python 3.10. 
+    """ String enum representing handedness.
     """
     LEFT = "LEFT"
     RIGHT = "RIGHT"
@@ -60,6 +58,7 @@ class HandLandmark(IntEnum):
     PINKY_FINGER_DIP = 19
     PINKY_FINGER_TIP = 20
 
+
 @unique
 class Finger(IntEnum):
     """
@@ -78,6 +77,7 @@ def get_handedness(mp_handedness) -> Handedness:
     label: str = MessageToDict(mp_handedness)["classification"][0]["label"]
     label = label.upper()
     return Handedness[label]
+
 
 class HandState:
     """ 
@@ -117,6 +117,7 @@ class HandState:
             return True
         return False
 
+
 class HandPose:
     """ Hand pose determined from HandState.
     """
@@ -125,7 +126,7 @@ class HandPose:
         digits: tuple of bools where true = up, false = not up
         (thumb, index, middle, ring, pinky)
         """
-        self.digits: List[bool] = [False] * 5
+        self.digits: List[bool] = [None] * 5
         if digits is not None and len(digits) == 5:
             self.digits = digits
     
@@ -174,7 +175,7 @@ def is_finger_extended(hand: HandState, finger: Finger, factor: int) -> bool:
             return is_pinky_extended(hand, factor)
         case other:
             return None
-    
+
 
 def is_index_extended(hand: HandState, factor: int) -> bool:
     """ Check if index finger is extended
@@ -264,6 +265,7 @@ def is_thumb_extended(hand: HandState, angle_threshold: int) -> bool:
         return True
     
     return False
+
 
 def non_thumb_fingers():
     """ Get non-thumb fingers
