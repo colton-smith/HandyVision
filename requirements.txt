@@ -2,3 +2,4 @@ numpy
 mediapipe
 protobuf
 opencv-python
+viztracer
