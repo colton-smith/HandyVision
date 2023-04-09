@@ -47,7 +47,7 @@ gesture_map = {
 }
 
 
-def get_gesture(hand_pose: HandPose):
+def get_gesture(hand_pose: HandPose) -> Gesture:
     """ Get gesture associated with hand pose
 
     Return None if gesture is unrecognized.
@@ -61,7 +61,7 @@ def get_gesture(hand_pose: HandPose):
     return gesture_map[hand_pose.get_tuple()]
 
 
-def get_gesture_string(hand_pose: HandPose):
+def get_gesture_string(hand_pose: HandPose) -> str:
     """ Get gesture string associated with hand pose
 
     Return "UNKOWN" if gesture is unrecognized.
@@ -69,5 +69,13 @@ def get_gesture_string(hand_pose: HandPose):
     gesture = get_gesture(hand_pose)
     if gesture is None:
         return "UNKNOWN"
+    else:
+        return gesture.name
+
+def get_string_from_gesture(gesture: Gesture) -> str:
+    """ Get string from gesture
+    """
+    if gesture is None:
+        return "NONE"
     else:
         return gesture.name
