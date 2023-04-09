@@ -18,7 +18,6 @@ from .landmarks import *
 class Gesture(str, Enum):
     """ String enum representing gestures.
     """
-    ARTHRITIS = "ARTHRITIS"
     FIST = "FIST"
     POINT = "POINT"
     PEACE = "PEACE"
@@ -38,7 +37,6 @@ class Gesture(str, Enum):
 
 
 gesture_map = {
-    (False, True, False, True, False): Gesture.ARTHRITIS,
     (False, False, False, False, False): Gesture.FIST,
     (False, True , False, False, False): Gesture.POINT,
     (False, True , True , False, False): Gesture.PEACE,
@@ -69,16 +67,20 @@ class IconManager:
         self.gesture_icon_map_right = {}
         self.__load_assets()
 
-    def icon_for_gesture(self, handedness: Handedness, gesture: Gesture) -> cv.Mat:
+    def icon_for_gesture(self, handedness: Handedness, gesture: Gesture, size: Tuple[int, int] = None) -> cv.Mat:
         """ Get image for handedness and gesture
 
         Returns None if there is no icon for gesture.
+        Size -> (width, height)
         """
         if handedness == Handedness.LEFT and gesture in self.gesture_icon_map_left:
-            return self.gesture_icon_map_left[gesture]
+            img = self.gesture_icon_map_left[gesture]
+            return img if size is None else cv.resize(img, size)
         elif handedness == Handedness.RIGHT and gesture in self.gesture_icon_map_right:
-            return self.gesture_icon_map_right[gesture]
+            img = self.gesture_icon_map_right[gesture]
+            return img if size is None else cv.resize(img, size)
         else:
+            print(f"No icon for gesture: {gesture.name}")
             return None
 
     def __load_assets(self):
