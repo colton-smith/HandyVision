@@ -2,8 +2,6 @@
 
 Example usage of hand pose estimation engine (HPEE)
 """
-import time
-
 import cv2 as cv
 
 import handyvision as hv
