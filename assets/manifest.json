@@ -1,8 +1,8 @@
 {
     "gestures":
     {
-        "LEFT_FOLDER": "gesture_icons/original",
-        "RIGHT_FOLDER": "gesture_icons/flipped",
+        "LEFT_FOLDER": "gesture_icons/left",
+        "RIGHT_FOLDER": "gesture_icons/right",
 
         "PATH_GESTURE_MAPPING": 
         [
