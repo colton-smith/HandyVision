@@ -1,3 +1,8 @@
+""" landmark_test.py
+
+Sandbox for testing lib handyvision landmark related operations
+such as pose detection.
+"""
 import cv2 as cv
 import mediapipe as mp
 import handyvision as hv
