@@ -1,0 +1,6 @@
+{
+    "gestures":
+    [
+        { "GESTURE_NAME" : "/some/path" },
+    ]
+}
