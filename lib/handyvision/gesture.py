@@ -5,6 +5,8 @@ Hand gesture utilities.
 import os
 
 import cv2 as cv
+import numpy as np
+
 import json
 
 from typing import Dict
@@ -133,3 +135,9 @@ def get_string_from_gesture(gesture: Gesture) -> str:
         return "NONE"
     else:
         return gesture.name
+
+def get_random_gesture() -> Gesture:
+    """ Return a random gesture 
+    """
+    possible_gestures = [g for g in Gesture]
+    return possible_gestures[np.random.randint(0, len(possible_gestures))]
