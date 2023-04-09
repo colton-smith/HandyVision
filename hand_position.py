@@ -165,7 +165,7 @@ def fingers_up(hand1, hand2):
         l_wrist_pinky_k = np.sqrt(((left_hand[0] - left_hand[18])**2) + ((left_hand[1] - left_hand[19])**2))
         l_wrist_pinky_t = np.sqrt(((left_hand[0] - left_hand[20])**2) + ((left_hand[1] - left_hand[21])**2))
 
-        if l_thumb_angle_deg > 40:
+        if l_thumb_angle_deg > 15:
             left_fingers_up[0] = True
         else : left_fingers_up[0] = False
 
@@ -212,7 +212,7 @@ def fingers_up(hand1, hand2):
         r_wrist_pinky_k = np.sqrt(((right_hand[0] - right_hand[18])**2) + ((right_hand[1] - right_hand[19])**2))
         r_wrist_pinky_t = np.sqrt(((right_hand[0] - right_hand[20])**2) + ((right_hand[1] - right_hand[21])**2))
 
-        if r_thumb_angle_deg > 45:
+        if r_thumb_angle_deg > 15:
             right_fingers_up[0] = True
         else : right_fingers_up[0] = False
 
