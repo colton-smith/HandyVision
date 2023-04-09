@@ -1,0 +1,26 @@
+{
+    "gestures":
+    {
+        "LEFT_FOLDER": "gesture_icons/original",
+        "RIGHT_FOLDER": "gesture_icons/flipped",
+
+        "PATH_GESTURE_MAPPING": 
+        [
+            {"File": "arthritis.png", "Gesture": "ARTHRITIS"},
+            {"File": "fist.png", "Gesture": "FIST"},
+            {"File": "four.png", "Gesture": "FOUR"},
+            {"File": "gun-double-barrel.png", "Gesture": "GUN_DOUBLE"},
+            {"File": "gun-single-barrel.png", "Gesture": "GUN_SINGLE"},
+            {"File": "hang-loose.png", "Gesture": "HANG_LOOSE"},
+            {"File": "love-you.png", "Gesture": "LOVE"},
+            {"File": "peace.png", "Gesture": "PEACE"},
+            {"File": "pinky.png", "Gesture": "CHEERIO"},
+            {"File": "point.png", "Gesture": "POINT"},
+            {"File": "rock.png", "Gesture": "ROCK"},
+            {"File": "splash.png", "Gesture": "SPLASH"},
+            {"File": "spread.png", "Gesture": "SPREAD"},
+            {"File": "three.png", "Gesture": "THREE"},
+            {"File": "thumb-up.png", "Gesture": "THUMB"}
+        ]
+    }
+}

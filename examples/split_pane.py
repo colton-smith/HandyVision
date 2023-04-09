@@ -56,12 +56,12 @@ def main():
 
         # If player 1 left or right is FLIPOFF
         if  p1_left_g == hv.Gesture.FLIPOFF or p1_right_g == hv.Gesture.FLIPOFF:
-            frame[:, 0:frame_width//2, 2] = 255
+            frame[:, frame_width//2:frame_width-1, 2] = 255
 
         # If player 1 left or right is FLIPOFF
         if  p2_left_g == hv.Gesture.FLIPOFF or p2_right_g == hv.Gesture.FLIPOFF:
-            frame[:, frame_width//2:frame_width-1, 2] = 255
-            
+            frame[:, 0:frame_width//2, 2] = 255
+
         cv.imshow("Game Window", frame)
     
         if cv.waitKey(1) & 0xff == ord('q'):
