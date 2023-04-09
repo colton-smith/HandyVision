@@ -1,3 +1,8 @@
+""" landmark_test.py
+
+Sandbox for testing lib handyvision landmark related operations
+such as pose detection.
+"""
 import cv2 as cv
 import mediapipe as mp
 import handyvision as hv
@@ -74,7 +79,9 @@ def main():
         min_tracking_confidence = 0.5
     )
 
+    fps_counter = hv.FPSCounter()
     while True:
+        fps, frametime_ms = fps_counter.update()
         got_frame, frame = cam.get_frame()
 
         if not got_frame:
@@ -94,7 +101,7 @@ def main():
         right_pose = detect_digits(right_state)
         right_gesture = hv.get_gesture_string(right_pose)
 
-        print(f"LEFT: {left_gesture} \t RIGHT: {right_gesture}")
+        print(f"FRAMETIME: {frametime_ms:0.2f}ms \t FPS: {fps:0.2f} \t LEFT: {left_gesture} \t RIGHT: {right_gesture}")
 
         # Display frame 
         cv.imshow("Hands", frame)

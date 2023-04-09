@@ -1,6 +1,7 @@
 import cv2 as cv
 import mediapipe as mp
 import numpy as np
+import handyvision as hv
 from google.protobuf.json_format import MessageToDict
 
 def get_position(hands, frame, frame_height, frame_width, mp_hands):
@@ -282,6 +283,7 @@ def main():
     # Open video capture using webcam (default)
     capture = cv.VideoCapture(0)
     got_frame, frame = capture.read()
+
     frame_height, frame_width, c = frame.shape 
 
     mp_hands_p1 = mp.solutions.hands
@@ -306,8 +308,10 @@ def main():
         got_frame, frame = got_frame, frame = capture.read()
         
         # These are backwards from expected because we have to flip the frame so when it displays it looks like a mirror
-        frame_p2 = frame[:, 0:frame_width//2]
-        frame_p1 = frame[:, frame_width//2:frame_width-1]
+
+        # Get left side of frame
+        # row, column
+        frame_p2, frame_p1 = hv.vertically_bisect_image(frame)
         
         hand1_p1, hand2_p1 = get_position(hands_p1, frame_p1, frame_height, frame_width//2, mp_hands_p1)
         hand1_p2, hand2_p2 = get_position(hands_p2, frame_p2, frame_height, frame_width//2, mp_hands_p2)
@@ -343,7 +347,7 @@ def main():
         
         if cv.waitKey(1) & 0xff == ord('q'):
             capture.release()
+            break
 
 if __name__=="__main__":
     main()
-    
