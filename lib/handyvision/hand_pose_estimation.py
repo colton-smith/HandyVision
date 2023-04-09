@@ -46,8 +46,8 @@ class HPEEConfig:
             self, 
             model_complexity: int = 0,
             max_hands: int = 2,
-            min_detection_confidence: int = 0,
-            min_tracking_confidence: int = 0,
+            min_detection_confidence: float = 0.5,
+            min_tracking_confidence: float = 0.5,
             detect_digit_params: DetectDigitOptions = DetectDigitOptions()
         ):
         self.max_hands = max_hands
@@ -65,10 +65,10 @@ class HPEE:
 
         # Configure model
         self.model = mp.solutions.hands.Hands(
-            self.model_complexity,
-            self.max_hands,
-            self.min_detection_confidence,
-            self.min_tracking_confidence
+            model_complexity = self.model_complexity,
+            max_num_hands = self.max_hands,
+            min_detection_confidence = self.min_detection_confidence,
+            min_tracking_confidence = self.min_tracking_confidence
         )
 
         # Left and right hand state
