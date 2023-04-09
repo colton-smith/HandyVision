@@ -96,8 +96,8 @@ class IconManager:
                 gesture = mapping["Gesture"]
                 left_file = os.path.join(self.asset_folder, left_folder, file)
                 right_file = os.path.join(self.asset_folder, right_folder, file)
-                left_image = cv.imread(left_file)
-                right_image = cv.imread(right_file)
+                left_image = cv.imread(left_file, cv.IMREAD_UNCHANGED)
+                right_image = cv.imread(right_file, cv.IMREAD_UNCHANGED)
                 self.gesture_icon_map_left[Gesture[gesture]] = left_image
                 self.gesture_icon_map_right[Gesture[gesture]] = right_image
 
@@ -135,6 +135,7 @@ def get_string_from_gesture(gesture: Gesture) -> str:
         return "NONE"
     else:
         return gesture.name
+
 
 def get_random_gesture() -> Gesture:
     """ Return a random gesture 

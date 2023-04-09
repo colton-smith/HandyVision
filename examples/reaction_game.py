@@ -20,6 +20,61 @@ class GameState(IntEnum):
     WIN_SCREEN = auto()
 
 
+class LineOptions: 
+    def __init__(self, color = None, thickness = None):
+        default_color = (255, 255, 255)
+        default_thickness = 4
+
+        self.color = color if color is not None else default_color 
+        self.thickness = thickness if thickness is not None else default_thickness 
+
+
+class GameConfig:
+    def __init__(self):
+        self.p1_label_color = (255, 255, 255)
+        self.p2_label_color = (255, 255, 255)
+        self.gesture_icon_size = (100, 100)
+        self.skeleton_toggle_key = 's'
+        self.fps_count_toggle_key= 'f'
+        self.draw_center_line = False
+
+
+def draw_gesture_icons(frame: cv.Mat, left: cv.Mat, right: cv.Mat) -> cv.Mat:
+    """ Draw left and right gesture icons on the frame
+    """
+    # TODO
+    center_col = frame.shape[1] // 2
+    img_w = left.shape[1]
+    img_h = left.shape[0]
+
+    # Icon size (H/W)
+    icon_size = np.array([img_h, img_w]) 
+
+    # Vertical bumper from top of screen
+    vertical_padding = 10
+
+    start_col = center_col - img_w
+    start_row = vertical_padding
+
+    left_image_top_left = np.array([start_row, start_col])
+    left_image_bot_right = left_image_top_left + icon_size 
+
+    frame[left_image_top_left[0]:left_image_bot_right[0], 
+          left_image_top_left[1]:left_image_bot_right[1],:] = left
+    
+    # TODO: Need to handle transparency
+    return frame
+
+
+def draw_center_line(frame: cv.Mat, options: LineOptions) -> cv.Mat:
+    """ Draw center line on frame with options
+    """
+    h = frame.shape[0]
+    w = frame.shape[1]
+    frame = cv.line(frame, (w//2, 0), (w//2, h-1), options.color, options.thickness)
+    return frame
+
+
 def main():
     # Open video capture using webcam (default)
     cam = hv.Camera(0)
@@ -35,8 +90,15 @@ def main():
     p1_hpee = hv.HPEE() 
     p2_hpee = hv.HPEE()
     
+    # Configure icon manager 
+    icon_manager = hv.IconManager("C:/Users/cnsmith/dev/HandyVision/assets") 
+
+    # Game config
+    config = GameConfig()
+    config.draw_center_line = True
+
     state: GameState = GameState.IDLE
-    
+
     while True:
         got_frame, frame = cam.get_frame()        
         if not got_frame:
@@ -60,28 +122,16 @@ def main():
         p2_left_g_name = hv.get_string_from_gesture(p2_left_g)
         p2_right_g_name = hv.get_string_from_gesture(p2_right_g)
 
-        # Any test to be written on the frame should be written after this flip
-    
-        coordinates_l_p1 = (50, 50)
-        coordinates_r_p1 = (50, 100)
-        coordinates_l_p2 = (50 + frame_width // 2, 50)
-        coordinates_r_p2 = (50 + frame_width // 2, 100)
         font = cv.FONT_HERSHEY_SIMPLEX
-        fontScale = 1
-        color = (255, 0 , 255)
-        thickness = 2
         frame.flags.writeable = True
-        frame = cv.putText(frame, p1_left_g_name, coordinates_l_p1, font, fontScale, color, thickness, cv.LINE_AA)
-        frame = cv.putText(frame, p1_right_g_name, coordinates_r_p1, font, fontScale, color, thickness, cv.LINE_AA)
-        frame = cv.putText(frame, p2_left_g_name, coordinates_l_p2, font, fontScale, color, thickness, cv.LINE_AA)
-        frame = cv.putText(frame, p2_right_g_name, coordinates_r_p2, font, fontScale, color, thickness, cv.LINE_AA)
-        frame = cv.line(frame, (frame_width//2, 0), (frame_width//2, frame_height-1), (0,0,0), 10) 
+
+        if config.draw_center_line:
+            frame = draw_center_line(frame, LineOptions()) 
         
-        # If player 1 left or right is FLIPOFF
+        # Check both players for FLIPOFF 
         if  p1_left_g == hv.Gesture.FLIPOFF or p1_right_g == hv.Gesture.FLIPOFF:
             frame[:, frame_width//2:frame_width-1, 2] = 255
 
-        # If player 1 left or right is FLIPOFF
         if  p2_left_g == hv.Gesture.FLIPOFF or p2_right_g == hv.Gesture.FLIPOFF:
             frame[:, 0:frame_width//2, 2] = 255
 
@@ -100,12 +150,15 @@ def main():
         # p1_left_g_name, gesture_name_r_p1
         # gesture_name_l_p2, p2_right_g_name
     
+        # Crashes
         match state:
             case GameState.IDLE:
                 p1_score = 0
                 p2_score = 0
                 p1_winner = False
                 p2_winner = False
+                # This crashes if hands are in frame with the same
+                # pose at the start, start_time ref before assignment
                 if not (p1_left_g == p2_right_g != hv.Gesture.OUT_OF_FRAME):
                     start_time = time.time()
                 elif p1_left_g == p2_right_g != hv.Gesture.OUT_OF_FRAME:
@@ -133,11 +186,17 @@ def main():
             case GameState.DISPLAY_GESTURE:
                 compare_gesture_l = hv.get_random_gesture()
                 compare_gesture_r = hv.get_random_gesture()
+                
+                left_icon = icon_manager.icon_for_gesture(hv.Handedness.LEFT, compare_gesture_l)
+                right_icon = icon_manager.icon_for_gesture(hv.Handedness.RIGHT, compare_gesture_r)
+
                 frame = cv.putText(frame, "Left: " + compare_gesture_l.name, coordinates_gesture_l, font, 1, (0,255,0), 3, cv.LINE_AA)
                 frame = cv.putText(frame, "Right: " + compare_gesture_r.name, coordinates_gesture_r, font, 1, (0,255,0), 3, cv.LINE_AA)
                 state = GameState.CHECK_GESTURE
 
             case GameState.CHECK_GESTURE:
+                frame = draw_gesture_icons(frame, left_icon, right_icon)
+
                 frame = cv.putText(frame, "Left: " + compare_gesture_l.name, coordinates_gesture_l, font, 1, (0,0,255), 3, cv.LINE_AA)
                 frame = cv.putText(frame, "Right: " + compare_gesture_r.name, coordinates_gesture_r, font, 1, (0,0,255), 3, cv.LINE_AA)
                 if p1_left_g == p2_left_g == compare_gesture_l and \
