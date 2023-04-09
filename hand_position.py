@@ -383,7 +383,8 @@ def main():
 
             case 'COUNTDOWN':
                 coordinates_count = (frame_width//2 - 50, 200)
-                coordinates_gesture = (frame_width//2 - 50, 400)
+                coordinates_gesture_l = (frame_width//2 - 50, 400)
+                coordinates_gesture_r = (frame_width//2 - 50, 500)
                 count = int(time.time() - countdown_start_time)
                 if count <= 2:
                     frame = cv.putText(frame, str(count+1), coordinates_count, font, 5, (0,0,255), 3, cv.LINE_AA)
@@ -391,24 +392,22 @@ def main():
                     state = 'DISPLAYGESTURE'
 
             case 'DISPLAYGESTURE':
-                compare_gesture = possible_gestures[np.random.randint(0, len(possible_gestures) - 1)]
-                frame = cv.putText(frame, compare_gesture, coordinates_gesture, font, 1, (0,255,0), 3, cv.LINE_AA)
+                compare_gesture_l = possible_gestures[np.random.randint(0, len(possible_gestures))]
+                compare_gesture_r = possible_gestures[np.random.randint(0, len(possible_gestures))]
+                frame = cv.putText(frame, "Left: " + compare_gesture_l, coordinates_gesture_l, font, 1, (0,255,0), 3, cv.LINE_AA)
+                frame = cv.putText(frame, "Right: " + compare_gesture_r, coordinates_gesture_r, font, 1, (0,255,0), 3, cv.LINE_AA)
                 state = 'CHECKGESTURE'
 
             case 'CHECKGESTURE':
-                frame = cv.putText(frame, compare_gesture, coordinates_gesture, font, 1, (0,255,0), 3, cv.LINE_AA)
-                if gesture_name_l_p1 == compare_gesture and gesture_name_r_p2 == compare_gesture:
+                frame = cv.putText(frame, "Left: " + compare_gesture_l, coordinates_gesture_l, font, 1, (0,0,255), 3, cv.LINE_AA)
+                frame = cv.putText(frame, "Right: " + compare_gesture_r, coordinates_gesture_r, font, 1, (0,0,255), 3, cv.LINE_AA)
+                if gesture_name_l_p1 == gesture_name_l_p2 == compare_gesture_l and \
+                   gesture_name_r_p1 == gesture_name_r_p2 == compare_gesture_r:
                     print("TIE")
+                    frame[:, :, 0:1] = 150
                     countdown_start_time = time.time()
-                    if p1_score == number_rounds:
-                        p1_winner = True
-                        state = 'WINSCREEN'
-                    elif p2_score == number_rounds:
-                        p2_winner = True
-                        state = 'WINSCREEN'
-                    else:
-                        state = 'DISPLAYGESTURE'
-                elif gesture_name_l_p1 == compare_gesture:
+                    state = 'DISPLAYGESTURE'
+                elif gesture_name_l_p1 == compare_gesture_l and gesture_name_r_p1 == compare_gesture_r:
                     p1_score += 1
                     frame[:, 0:frame_width//2, 1] = 200
                     countdown_start_time = time.time()
@@ -422,7 +421,7 @@ def main():
                         winscreen_starttime = time.time()
                     else:
                         state = 'DISPLAYGESTURE'
-                elif gesture_name_r_p2 == compare_gesture:
+                elif gesture_name_l_p2 == compare_gesture_l and gesture_name_r_p2 == compare_gesture_r:
                     p2_score += 1
                     frame[:, frame_width//2:frame_width-1, 1] = 200
                     countdown_start_time = time.time()
