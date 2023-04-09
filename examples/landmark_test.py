@@ -35,9 +35,29 @@ def get_hand_states(hand_model, frame: cv.Mat):
     
     return hands
 
+
+def detect_digits(
+        hand: hv.HandState, 
+        opt: hv.DetectDigitOptions = hv.DetectDigitOptions()
+    ) -> hv.HandPose:
+    """ Determine what fingers are up given hand landmarks
+
+    Optionally provide custom parameters.
+    """
+    hand_pose: hv.HandPose = hv.HandPose()
+    thumb_extended = hv.is_thumb_extended(hand, opt.thumb_extended_angle_threshold)
+    hand_pose.set(hv.Finger.THUMB, thumb_extended)
+
+    for finger in hv.non_thumb_fingers():
+        extended = hv.is_finger_extended(hand, finger, opt.wrist_finger_factor)
+        hand_pose.set(finger, extended)
+
+    return hand_pose
+
 def main():
     # Open video capture using webcam (default)
     cam = hv.Camera(0)
+    cam.set_auto_focus(False)
   
     # Set up hands model for image capture
     mp_hands = mp.solutions.hands
@@ -50,18 +70,21 @@ def main():
 
     while True:
         got_frame, frame = cam.get_frame()
+
+        if not got_frame:
+            continue
+
         frame = cv.flip(frame, 1)
-        
         hand_data: Dict[str, hv.HandState] = get_hand_states(hands, frame)
 
         for name, data in hand_data.items():
             if data is None:
-                print(f"{name} not in frame")
+                continue
             else:
                 print(f"{name} in frame!")
-                fing = hv.HandLandmarkName.MIDDLE_FINGER_TIP
-                print(f"{fing.name}: {data.get(fing)}")
-
+                pose: hv.HandPose = detect_digits(data)
+                print(f"{name} digit states: {pose.get_tuple()}")
+    
         # Display frame 
         cv.imshow("Hands", frame)
         if cv.waitKey(1) & 0xff == ord('q'):
