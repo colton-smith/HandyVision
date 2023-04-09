@@ -1,6 +1,7 @@
 import cv2 as cv
 import mediapipe as mp
 import numpy as np
+import time
 import handyvision as hv
 from google.protobuf.json_format import MessageToDict
 
@@ -253,7 +254,7 @@ def get_gesture(left_fingers, right_fingers):
     elif np.array_equiv(left_fingers, [True , False, False, False, True ]) : gesture_left = 'hang loose'
     elif np.array_equiv(left_fingers, [False, False, True , False, False]) : gesture_left = 'flipoff'
     elif np.array_equiv(left_fingers, [None , None , None , None , None ]) : gesture_left = 'not in frame'
-    else : gesture_left = 'unrecognized gesture'
+    # else : gesture_left = 'unrecognized gesture'
 
     # Finding right gesture
     if   np.array_equiv(right_fingers, [False, False, False, False, False]) : gesture_right = 'fist'
@@ -271,7 +272,7 @@ def get_gesture(left_fingers, right_fingers):
     elif np.array_equiv(right_fingers, [True , False, False, False, True ]) : gesture_right = 'hang loose'
     elif np.array_equiv(right_fingers, [False, False, True , False, False]) : gesture_right = 'flipoff'
     elif np.array_equiv(right_fingers, [None , None , None , None , None ]) : gesture_right = 'not in frame'
-    else : gesture_right = 'unrecognized gesture'
+    # else : gesture_right = 'unrecognized gesture'
 
     return gesture_left, gesture_right
 
@@ -303,6 +304,8 @@ def main():
         min_detection_confidence = 0.5,
         min_tracking_confidence = 0.5
     )
+
+    state = 'IDLE'
 
     while True:
         got_frame, frame = got_frame, frame = capture.read()
@@ -336,6 +339,7 @@ def main():
         frame = cv.putText(frame, gesture_name_r_p1, coordinates_r_p1, font, fontScale, color, thickness, cv.LINE_AA)
         frame = cv.putText(frame, gesture_name_l_p2, coordinates_l_p2, font, fontScale, color, thickness, cv.LINE_AA)
         frame = cv.putText(frame, gesture_name_r_p2, coordinates_r_p2, font, fontScale, color, thickness, cv.LINE_AA)
+        frame = cv.line(frame, (frame_width//2, 0), (frame_width//2, frame_height-1), (0,0,0), 10) 
 
         if gesture_name_l_p1 == 'flipoff' or gesture_name_r_p1 == 'flipoff':
             frame[:, frame_width//2:frame_width-1, 2] = 255
@@ -343,8 +347,111 @@ def main():
         if gesture_name_l_p2 == 'flipoff' or gesture_name_r_p2 == 'flipoff':
             frame[:, 0:frame_width//2, 2] = 255
 
-        cv.imshow("Game Window", frame)
+        # Game State Machine
+        # 1 --> Wait until same gestures are held by all 4 hands at the same time for 2 seconds
+        #       - If 'point' is displayed, game to 4
+        #       - If 'peace' is displayed, game to 8
+        #       - If 'three' is displayed, game to 12
+        #       - If 'four'  is displayed, game to 16
+        #       - If 'spread' is displayed, game to 20
+        # 2 --> Start countdown
+        # 3 --> Display symbols (write name of left and right gesture) and detect who displayed first
+        #       - Add point to winner, check if score is equal to win_number
+        #       - if points = win_number --> Win screen
+        #       - if points != win_number --> Start countdown
+        # gesture_name_l_p1, gesture_name_r_p1
+        # gesture_name_l_p2, gesture_name_r_p2
+
+        possible_gestures = ['fist', 'point', 'peace', 'three', 'four', 'spread', 'thumb', 
+                             'rock', 'love', 'gun', 'splash', 'pinky', 'hang loose']
+
+        match state:
+            case 'IDLE':
+                p1_score = 0
+                p2_score = 0
+                p1_winner = False
+                p2_winner = False
+                if not (gesture_name_l_p1 == gesture_name_r_p2 != 'not in frame'):
+                    start_time = time.time()
+                elif gesture_name_l_p1 == gesture_name_r_p2 != 'not in frame':  # == gesture_name_r_p1 == gesture_name_l_p2
+                    current_time = time.time()
+                    if current_time - start_time >= 2:
+                        if gesture_name_l_p1 == 'point' : number_rounds = 4
+                        elif gesture_name_l_p1 == 'peace' : number_rounds = 8
+                        elif gesture_name_l_p1 == 'three' : number_rounds = 12
+                        elif gesture_name_l_p1 == 'four' : number_rounds = 16
+                        elif gesture_name_l_p1 == 'spread' : number_rounds = 20
+                        else : number_rounds = 4    # Default number of rounds
+                        countdown_start_time = current_time
+                        state = 'COUNTDOWN'
+
+            case 'COUNTDOWN':
+                coordinates_count = (frame_width//2 - 50, 200)
+                coordinates_gesture_l = (frame_width//2 - 50, 400)
+                coordinates_gesture_r = (frame_width//2 - 50, 500)
+                count = int(time.time() - countdown_start_time)
+                if count <= 2:
+                    frame = cv.putText(frame, str(count+1), coordinates_count, font, 5, (0,0,255), 3, cv.LINE_AA)
+                if count >= 3:
+                    state = 'DISPLAYGESTURE'
+
+            case 'DISPLAYGESTURE':
+                compare_gesture_l = possible_gestures[np.random.randint(0, len(possible_gestures))]
+                compare_gesture_r = possible_gestures[np.random.randint(0, len(possible_gestures))]
+                frame = cv.putText(frame, "Left: " + compare_gesture_l, coordinates_gesture_l, font, 1, (0,255,0), 3, cv.LINE_AA)
+                frame = cv.putText(frame, "Right: " + compare_gesture_r, coordinates_gesture_r, font, 1, (0,255,0), 3, cv.LINE_AA)
+                state = 'CHECKGESTURE'
+
+            case 'CHECKGESTURE':
+                frame = cv.putText(frame, "Left: " + compare_gesture_l, coordinates_gesture_l, font, 1, (0,0,255), 3, cv.LINE_AA)
+                frame = cv.putText(frame, "Right: " + compare_gesture_r, coordinates_gesture_r, font, 1, (0,0,255), 3, cv.LINE_AA)
+                if gesture_name_l_p1 == gesture_name_l_p2 == compare_gesture_l and \
+                   gesture_name_r_p1 == gesture_name_r_p2 == compare_gesture_r:
+                    print("TIE")
+                    frame[:, :, 0:1] = 150
+                    countdown_start_time = time.time()
+                    state = 'DISPLAYGESTURE'
+                elif gesture_name_l_p1 == compare_gesture_l and gesture_name_r_p1 == compare_gesture_r:
+                    p1_score += 1
+                    frame[:, 0:frame_width//2, 1] = 200
+                    countdown_start_time = time.time()
+                    if p1_score == number_rounds:
+                        p1_winner = True
+                        state = 'WINSCREEN'
+                        winscreen_starttime = time.time()
+                    elif p2_score == number_rounds:
+                        p2_winner = True
+                        state = 'WINSCREEN'
+                        winscreen_starttime = time.time()
+                    else:
+                        state = 'DISPLAYGESTURE'
+                elif gesture_name_l_p2 == compare_gesture_l and gesture_name_r_p2 == compare_gesture_r:
+                    p2_score += 1
+                    frame[:, frame_width//2:frame_width-1, 1] = 200
+                    countdown_start_time = time.time()
+                    if p1_score == number_rounds:
+                        p1_winner = True
+                        state = 'WINSCREEN'
+                        winscreen_starttime = time.time()
+                    elif p2_score == number_rounds:
+                        p2_winner = True
+                        state = 'WINSCREEN'
+                        winscreen_starttime = time.time()
+                    else:
+                        state = 'DISPLAYGESTURE'
+
+            case 'WINSCREEN':
+                winscreen_currenttime = time.time()
+                if p1_winner:
+                    frame[:, 0:frame_width//2, 1] = 200
+                elif p2_winner:
+                    frame[:, frame_width//2:frame_width-1, 1] = 200
+                
+                if winscreen_currenttime - winscreen_starttime > 5:
+                    state = 'IDLE'
         
+        cv.imshow("Game Window", frame)
+
         if cv.waitKey(1) & 0xff == ord('q'):
             capture.release()
             break
