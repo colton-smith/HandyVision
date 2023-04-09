@@ -247,22 +247,27 @@ def is_thumb_extended(hand: HandState, angle_threshold: int) -> bool:
     thumb_base = hand.get_point(HandLandmark.THUMB_CMC)
     thumb_tip = hand.get_point(HandLandmark.THUMB_TIP)
     index_k = hand.get_point(HandLandmark.INDEX_FINGER_MCP)
+    pinky_k = hand.get_point(HandLandmark.PINKY_FINGER_MCP)
 
     thumb_tip_to_base = thumb_tip - thumb_base
     index_tip_to_base = index_k - thumb_base
 
-    # Screams in **not** dot-product...
-    thumb_angle_rad = \
-        np.arctan2(thumb_tip_to_base[1], thumb_tip_to_base[0]) \
-        - np.arctan2(index_tip_to_base[1], index_tip_to_base[0])
-        
-    thumb_angle_deg = np.abs(math.degrees(thumb_angle_rad))
+    thumb_t_pinky_k_dist = np.linalg.norm(thumb_tip - pinky_k)
+    index_k_pinky_k_dist = np.linalg.norm(index_k - pinky_k)
 
-    if thumb_angle_deg > 180.0:
-        thumb_angle_deg = 360 - thumb_angle_deg
+    if index_k_pinky_k_dist < thumb_t_pinky_k_dist:
+        # Screams in **not** dot-product...
+        thumb_angle_rad = \
+            np.arctan2(thumb_tip_to_base[1], thumb_tip_to_base[0]) \
+            - np.arctan2(index_tip_to_base[1], index_tip_to_base[0])
+            
+        thumb_angle_deg = np.abs(math.degrees(thumb_angle_rad))
 
-    if thumb_angle_deg > angle_threshold:
-        return True
+        if thumb_angle_deg > 180.0:
+            thumb_angle_deg = 360 - thumb_angle_deg
+
+        if thumb_angle_deg > angle_threshold:
+            return True
     
     return False
 
