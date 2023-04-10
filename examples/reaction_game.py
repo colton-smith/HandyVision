@@ -42,27 +42,24 @@ class GameConfig:
 def draw_gesture_icons(frame: cv.Mat, left: cv.Mat, right: cv.Mat) -> cv.Mat:
     """ Draw left and right gesture icons on the frame
     """
-    # TODO
     center_col = frame.shape[1] // 2
-    img_w = left.shape[1]
-    img_h = left.shape[0]
-
-    # Icon size (H/W)
-    icon_size = np.array([img_h, img_w]) 
+    overlay_w = left.shape[1]
+    inter_icon_spacer_half_width = 5
 
     # Vertical bumper from top of screen
     vertical_padding = 10
 
-    start_col = center_col - img_w
+    # Offset from center width of overlay + half the spacer width
+    start_col = center_col - overlay_w - inter_icon_spacer_half_width
     start_row = vertical_padding
 
     left_image_top_left = np.array([start_row, start_col])
-    left_image_bot_right = left_image_top_left + icon_size 
+    frame = hv.overlay_transparent_image(frame, left, left_image_top_left)
 
-    frame[left_image_top_left[0]:left_image_bot_right[0], 
-          left_image_top_left[1]:left_image_bot_right[1],:] = left
-    
-    # TODO: Need to handle transparency
+    # Offset right image width of the left overlay, + 2 * spacer
+    right_image_top_left = left_image_top_left + (0, overlay_w + 2 * inter_icon_spacer_half_width)
+    frame = hv.overlay_transparent_image(frame, right, right_image_top_left)
+
     return frame
 
 
@@ -91,11 +88,12 @@ def main():
     p2_hpee = hv.HPEE()
     
     # Configure icon manager 
-    icon_manager = hv.IconManager("C:/Users/cnsmith/dev/HandyVision/assets") 
+    icon_manager = hv.IconManager("C:/dev/HandyVision/assets") 
 
     # Game config
     config = GameConfig()
-    config.draw_center_line = True
+    config.draw_center_line = False
+    config.gesture_icon_size = (75, 100)
 
     state: GameState = GameState.IDLE
 
@@ -184,21 +182,23 @@ def main():
                     state = GameState.DISPLAY_GESTURE
 
             case GameState.DISPLAY_GESTURE:
-                compare_gesture_l = hv.get_random_gesture([hv.Gesture.FLIPOFF])
-                compare_gesture_r = hv.get_random_gesture([hv.Gesture.FLIPOFF])
+                compare_gesture_l = hv.get_random_gesture([hv.Gesture.FLIPOFF, hv.Gesture.OUT_OF_FRAME])
+                compare_gesture_r = hv.get_random_gesture([hv.Gesture.FLIPOFF, hv.Gesture.OUT_OF_FRAME])
                 
-                left_icon = icon_manager.icon_for_gesture(hv.Handedness.LEFT, compare_gesture_l)
-                right_icon = icon_manager.icon_for_gesture(hv.Handedness.RIGHT, compare_gesture_r)
-
-                frame = cv.putText(frame, "Left: " + compare_gesture_l.name, coordinates_gesture_l, font, 1, (0,255,0), 3, cv.LINE_AA)
-                frame = cv.putText(frame, "Right: " + compare_gesture_r.name, coordinates_gesture_r, font, 1, (0,255,0), 3, cv.LINE_AA)
+                left_icon = icon_manager.icon_for_gesture(
+                    hv.Handedness.LEFT, 
+                    compare_gesture_l, 
+                    config.gesture_icon_size
+                )
+                right_icon = icon_manager.icon_for_gesture(
+                    hv.Handedness.RIGHT, 
+                    compare_gesture_r, 
+                    config.gesture_icon_size
+                )
                 state = GameState.CHECK_GESTURE
 
             case GameState.CHECK_GESTURE:
                 frame = draw_gesture_icons(frame, left_icon, right_icon)
-
-                frame = cv.putText(frame, "Left: " + compare_gesture_l.name, coordinates_gesture_l, font, 1, (0,0,255), 3, cv.LINE_AA)
-                frame = cv.putText(frame, "Right: " + compare_gesture_r.name, coordinates_gesture_r, font, 1, (0,0,255), 3, cv.LINE_AA)
                 if p1_left_g == p2_left_g == compare_gesture_l and \
                    p1_right_g == p2_right_g == compare_gesture_r:
                     print("TIE")

@@ -3,7 +3,26 @@
 Misc. image processing utilities.
 """
 import cv2 as cv
+import numpy as np
 from typing import Tuple
+
+
+def overlay_transparent_image(background: cv.Mat, overlay: cv.Mat, top_left: np.array):
+    """ Overlay an image with a transparency channel over an image without one
+
+    Note: does not handle blending, just binary transparency. 
+    """
+    overlay_alpha = overlay[:,:,3] / 255.0
+    image_alpha = 1 - overlay_alpha 
+
+    overlay_size = np.array([overlay.shape[0], overlay.shape[1]])
+    bot_right = top_left + overlay_size
+
+    background[top_left[0]:bot_right[0], top_left[1]:bot_right[1], 0:3] = \
+        np.dstack([image_alpha, image_alpha, image_alpha]) * background[top_left[0]:bot_right[0], top_left[1]:bot_right[1], 0:3] \
+        + np.dstack([overlay_alpha, overlay_alpha, overlay_alpha]) * overlay[: , : , 0:3] \
+
+    return background
 
 
 def vertically_bisect_image(img: cv.Mat) -> Tuple[cv.Mat, cv.Mat]:
