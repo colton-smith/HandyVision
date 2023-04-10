@@ -67,7 +67,7 @@ class IconManager:
         self.gesture_icon_map_right = {}
         self.__load_assets()
 
-    def icon_for_gesture(self, handedness: Handedness, gesture: Gesture, size: Tuple[int, int] = None) -> cv.Mat:
+    def icon_for_gesture(self, handedness: Handedness, gesture: Gesture, scale: Tuple[int, int] = None) -> cv.Mat:
         """ Get image for handedness and gesture
 
         Returns None if there is no icon for gesture.
@@ -75,10 +75,10 @@ class IconManager:
         """
         if handedness == Handedness.LEFT and gesture in self.gesture_icon_map_left:
             img = self.gesture_icon_map_left[gesture]
-            return img if size is None else cv.resize(img, size)
+            return img if scale is None else cv.resize(img, None, fx = scale[0], fy = scale[1])
         elif handedness == Handedness.RIGHT and gesture in self.gesture_icon_map_right:
             img = self.gesture_icon_map_right[gesture]
-            return img if size is None else cv.resize(img, size)
+            return img if scale is None else cv.resize(img, None, fx = scale[0], fy = scale[1])
         else:
             print(f"No icon for gesture: {gesture.name}")
             return None
