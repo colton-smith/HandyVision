@@ -33,6 +33,12 @@ class Camera:
         """
         af_value = 1 if on else 0
         self.camera.set(cv.CAP_PROP_AUTOFOCUS, af_value)
+    
+    def set_resolution(self, width, height):
+        """ Set resolution
+        """
+        self.camera.set(3, width)
+        self.camera.set(4, height)
 
     def release(self):
         """ Release camera, also called when object is destroyed

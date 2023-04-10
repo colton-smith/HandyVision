@@ -31,10 +31,13 @@ def vertically_bisect_image(img: cv.Mat) -> Tuple[cv.Mat, cv.Mat]:
     h = img.shape[0]
     w = img.shape[1]
 
-    left_half = img[:, 0 : w//2]
-    right_half = img[:, w//2:w-1]
+    left_s = np.s_[:, 0 : w//2]
+    right_s = np.s_[:, w//2:w-1]
+
+    left_half = img[left_s]
+    right_half = img[right_s]
     
-    return left_half, right_half
+    return left_half, right_half, left_s, right_s
 
 
 def bgr2rgb(img: cv.Mat): 

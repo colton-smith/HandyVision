@@ -16,6 +16,7 @@ from typing import Tuple
 from .gesture import *
 
 
+
 def detect_digits(
         hand: HandState, 
         opt: DetectDigitOptions = DetectDigitOptions()
@@ -80,6 +81,8 @@ class HPEE:
         self.right_hand_pose: HandPose = None
         self.right_hand_state: HandState = None
 
+        self.raw_landmark_result = None
+
     def get_gesture_estimations(self) -> Tuple[Gesture, Gesture]:
         """ Return (left gesture, right gesture)
         """
@@ -120,6 +123,7 @@ class HPEE:
         # Clear previous state
         self.left_hand_state = None
         self.right_hand_state = None 
+        self.raw_landmark_result = None
 
         if frame is None or frame.size == 0:
             return
@@ -130,6 +134,8 @@ class HPEE:
         # Question: does multi_hand_landmarks == None -> multi_handedness == None    
         if frame_hands.multi_hand_landmarks is None:
             return
+        
+        self.raw_landmark_result = frame_hands.multi_hand_landmarks
 
         for mp_landmark, mp_handedness in zip(
                 frame_hands.multi_hand_landmarks, 
@@ -162,3 +168,22 @@ class HPEE:
         """
         self.left_hand_gesture = get_gesture(self.left_hand_pose)
         self.right_hand_gesture = get_gesture(self.right_hand_pose)
+
+    def annotate_frame(self, frame: cv.Mat):
+        """ Annotate frame with current landmarks
+        """
+        mp_drawing = mp.solutions.drawing_utils
+        mp_drawing_styles = mp.solutions.drawing_styles
+        mp_hands = mp.solutions.hands
+
+        if self.raw_landmark_result is not None:
+            for hand_landmarks in self.raw_landmark_result:
+                mp_drawing.draw_landmarks(
+                    frame,
+                    hand_landmarks,
+                    mp_hands.HAND_CONNECTIONS,
+                    mp_drawing_styles.get_default_hand_landmarks_style(),
+                    mp_drawing_styles.get_default_hand_connections_style()
+                )
+        
+        return frame

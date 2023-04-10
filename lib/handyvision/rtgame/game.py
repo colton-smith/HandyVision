@@ -9,13 +9,14 @@ import time
 
 
 class Game:
-    def __init__(self, asset_folder, camera_idx):
+    def __init__(self, asset_folder, camera_idx, width = 1280, height=720):
         self.init_success = False
         self.asset_folder = asset_folder
         self.camera_idx = camera_idx
         
         self.cam = hv.Camera(self.camera_idx)
         self.cam.set_auto_focus(False)
+        self.cam.set_resolution(width, height)
 
         got_frame, frame = self.cam.get_frame()
         if not got_frame:
@@ -33,22 +34,32 @@ class Game:
 
         # Game config
         self.config = rtg.GameConfig()
-        self.config.draw_center_line = False
         self.config.gesture_icon_scale = (0.5, 0.5)
         self.config.flip_off_blur_config.ksize = (7,7)
         self.config.flip_off_blur_config.sigmaX = 5
         self.config.flip_off_blur_config.sigmaY = 5
 
-        # Configuration
-        self.show_fps_key = 'f'
-        self.show_fps = False
+        # FPS
         self.fps = 0
         self.frametime_ms = 0
-        
+
+        # Flags 
+        self.show_fps = False
+        self.draw_hand_landmarks = False
+        self.show_help = False
+        self.show_debug = False
+
+        # Keys
+        self.show_fps_key = "f"
+        self.draw_hand_landmarks_key = "s"
+        self.show_help_key = "h"
+        self.show_debug_info_key = "d"
 
         self.state = rtg.GameState.IDLE
         self.hud = rtg.HUD(self.frame_height, self.frame_width)
         self.fps_counter = hv.FPSCounter()
+        self.p1_score = 0
+        self.p2_score = 0
 
     def run(self):
         if not self.init_success:
@@ -65,7 +76,7 @@ class Game:
             # Set frame as read-only to pass by reference
             frame = cv.flip(frame, 1)
             frame.flags.writeable = False
-            frame_p1, frame_p2 = hv.vertically_bisect_image(frame)
+            frame_p1, frame_p2, slice_p1, slice_p2 = hv.vertically_bisect_image(frame)
 
             self.p1_hpee.update(hv.bgr2rgb(frame_p1))
             self.p2_hpee.update(hv.bgr2rgb(frame_p2))
@@ -74,19 +85,31 @@ class Game:
             p2_left_g, p2_right_g = self.p2_hpee.get_gesture_estimations()
 
             frame.flags.writeable = True
-            if self.config.draw_center_line:
-                frame = hv.draw_center_line(frame, hv.LineOptions()) 
             
             # Check both players for FLIPOFF 
             if  p1_left_g == hv.Gesture.FLIPOFF or p1_right_g == hv.Gesture.FLIPOFF:
-                frame = rtg.muddle_frame(frame, hv.HorizontalHalf.RIGHT, self.config)
+                frame = self.hud.muddle_frame(frame, hv.HorizontalHalf.RIGHT, self.config)
 
             if  p2_left_g == hv.Gesture.FLIPOFF or p2_right_g == hv.Gesture.FLIPOFF:
-                frame  = rtg.muddle_frame(frame, hv.HorizontalHalf.LEFT, self.config)
+                frame  = self.hud.muddle_frame(frame, hv.HorizontalHalf.LEFT, self.config)
+
+            if self.draw_hand_landmarks:
+                frame[slice_p1] = self.p1_hpee.annotate_frame(frame_p1)
+                frame[slice_p2] = self.p2_hpee.annotate_frame(frame_p2)
 
             # Draw all consistent UI
+            frame = self.hud.draw_hud(frame)
+            self.hud.draw_player_scores(frame, self.p1_score, self.p2_score)
+
+            if self.show_debug and self.state != rtg.GameState.COUNTDOWN:
+                self.hud.draw_pose_estimates(frame, (p1_left_g, p1_right_g), (p2_left_g, p2_right_g))
+
             if self.show_fps: 
                 self.hud.draw_fps(frame, self.fps)
+
+            # Draw help on top of other hid items
+            if self.show_help:
+                self.hud.draw_help_box(frame)
 
             # Game State Machine
             # 1 --> Wait until same gestures are held by all 4 hands at the same time for 2 seconds
@@ -104,8 +127,9 @@ class Game:
             # TODO: Can crash
             match self.state:
                 case rtg.GameState.IDLE:
-                    p1_score = 0
-                    p2_score = 0
+                    self.hud.draw_idle_text(frame)
+                    self.p1_score = 0
+                    self.p2_score = 0
                     p1_winner = False
                     p2_winner = False
                     # TODO: This crashes if hands are in frame with the same
@@ -146,7 +170,7 @@ class Game:
                     self.state = rtg.GameState.CHECK_GESTURE
 
                 case rtg.GameState.CHECK_GESTURE:
-                    frame = rtg.draw_gesture_icons(frame, left_icon, right_icon)
+                    frame = self.hud.draw_gesture_icons(frame, left_icon, right_icon)
                     
                     p1_correct = p1_left_g == target_gest_left and p1_right_g == target_gest_right
                     p2_correct = p2_left_g == target_gest_left and p2_right_g == target_gest_right
@@ -157,28 +181,28 @@ class Game:
                         countdown_start_time = time.time()
                         self.state = rtg.GameState.DISPLAY_GESTURE
                     elif p1_correct:
-                        p1_score += 1
+                        self.p1_score += 1
                         frame[:, 0:self.frame_width//2, 1] = 200
                         countdown_start_time = time.time()
-                        if p1_score == number_rounds:
+                        if self.p1_score == number_rounds:
                             p1_winner = True
                             self.state = rtg.GameState.WIN_SCREEN
                             winscreen_starttime = time.time()
-                        elif p2_score == number_rounds:
+                        elif self.p2_score == number_rounds:
                             p2_winner = True
                             self.state = rtg.GameState.WIN_SCREEN
                             winscreen_starttime = time.time()
                         else:
                             self.state = rtg.GameState.DISPLAY_GESTURE
                     elif p2_correct:
-                        p2_score += 1
+                        self.p2_score += 1
                         frame[:, self.frame_width//2:self.frame_width-1, 1] = 200
                         countdown_start_time = time.time()
-                        if p1_score == number_rounds:
+                        if self.p1_score == number_rounds:
                             p1_winner = True
                             self.state = rtg.GameState.WIN_SCREEN
                             winscreen_starttime = time.time()
-                        elif p2_score == number_rounds:
+                        elif self.p2_score == number_rounds:
                             p2_winner = True
                             self.state = rtg.GameState.WIN_SCREEN
                             winscreen_starttime = time.time()
@@ -188,9 +212,12 @@ class Game:
                 case rtg.GameState.WIN_SCREEN:
                     winscreen_currenttime = time.time()
                     if p1_winner:
-                        frame[:, 0:self.frame_width//2, 1] = 200
+                        # Disable green screen
+                        # frame[:, 0:self.frame_width//2, 1] = 200
+                        self.hud.draw_player_wins_text(frame, "1")
                     elif p2_winner:
-                        frame[:, self.frame_width//2:self.frame_width-1, 1] = 200
+                        # frame[:, self.frame_width//2:self.frame_width-1, 1] = 200
+                        self.hud.draw_player_wins_text(frame, "2")
                     
                     if winscreen_currenttime - winscreen_starttime > 5:
                         self.state = rtg.GameState.IDLE
@@ -198,11 +225,18 @@ class Game:
             cv.imshow("Game Window", frame)
 
             key = cv.waitKey(1)
-
+            if key & 0xff == ord(self.show_debug_info_key):
+                print("Toggling show debug!")
+                self.show_debug  = not self.show_debug
+            if key & 0xff == ord(self.show_help_key):
+                print("Toggling show help!")
+                self.show_help = not self.show_help
+            if key & 0xff == ord(self.draw_hand_landmarks_key):
+                print("Toggling show landmarks!")
+                self.draw_hand_landmarks = not self.draw_hand_landmarks
             if key & 0xff == ord(self.show_fps_key):
                 print("Toggling show fps!")
                 self.show_fps = not self.show_fps
-
             if key & 0xff == ord('q'):
                 self.cam.release()
                 break
