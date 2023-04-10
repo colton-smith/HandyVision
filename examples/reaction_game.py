@@ -173,8 +173,6 @@ def main():
 
             case GameState.COUNTDOWN:
                 coordinates_count = (frame_width//2 - 50, 200)
-                coordinates_gesture_l = (frame_width//2 - 50, 400)
-                coordinates_gesture_r = (frame_width//2 - 50, 500)
                 count = int(time.time() - countdown_start_time)
                 if count <= 2:
                     frame = cv.putText(frame, str(count+1), coordinates_count, font, 5, (0,0,255), 3, cv.LINE_AA)
@@ -199,13 +197,16 @@ def main():
 
             case GameState.CHECK_GESTURE:
                 frame = draw_gesture_icons(frame, left_icon, right_icon)
-                if p1_left_g == p2_left_g == compare_gesture_l and \
-                   p1_right_g == p2_right_g == compare_gesture_r:
+                
+                p1_correct = p1_left_g == compare_gesture_l and p1_right_g == compare_gesture_r
+                p2_correct = p2_left_g == compare_gesture_l and p2_right_g == compare_gesture_r
+
+                if p1_correct and p2_correct:
                     print("TIE")
                     frame[:, :, 0:1] = 150
                     countdown_start_time = time.time()
                     state = GameState.DISPLAY_GESTURE
-                elif p1_left_g == compare_gesture_l and p2_right_g == compare_gesture_r:
+                elif p1_correct:
                     p1_score += 1
                     frame[:, 0:frame_width//2, 1] = 200
                     countdown_start_time = time.time()
@@ -219,7 +220,7 @@ def main():
                         winscreen_starttime = time.time()
                     else:
                         state = GameState.DISPLAY_GESTURE
-                elif p2_left_g == compare_gesture_l and p2_right_g == compare_gesture_r:
+                elif p2_correct:
                     p2_score += 1
                     frame[:, frame_width//2:frame_width-1, 1] = 200
                     countdown_start_time = time.time()
