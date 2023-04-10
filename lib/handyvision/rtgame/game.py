@@ -39,7 +39,16 @@ class Game:
         self.config.flip_off_blur_config.sigmaX = 5
         self.config.flip_off_blur_config.sigmaY = 5
 
+        # Configuration
+        self.show_fps_key = 'f'
+        self.show_fps = False
+        self.fps = 0
+        self.frametime_ms = 0
+        
+
         self.state = rtg.GameState.IDLE
+        self.hud = rtg.HUD(self.frame_height, self.frame_width)
+        self.fps_counter = hv.FPSCounter()
 
     def run(self):
         if not self.init_success:
@@ -47,6 +56,7 @@ class Game:
             return
         
         while True:
+            self.fps, self.frametime_ms = self.fps_counter.update()
             got_frame, frame = self.cam.get_frame()        
             if not got_frame:
                 print("Missed frame..")
@@ -74,7 +84,9 @@ class Game:
             if  p2_left_g == hv.Gesture.FLIPOFF or p2_right_g == hv.Gesture.FLIPOFF:
                 frame  = rtg.muddle_frame(frame, hv.HorizontalHalf.LEFT, self.config)
 
-            # Draw consistent UI
+            # Draw all consistent UI
+            if self.show_fps: 
+                self.hud.draw_fps(frame, self.fps)
 
             # Game State Machine
             # 1 --> Wait until same gestures are held by all 4 hands at the same time for 2 seconds
@@ -88,10 +100,8 @@ class Game:
             #       - Add point to winner, check if score is equal to win_number
             #       - if points = win_number --> Win screen
             #       - if points != win_number --> Start countdown
-            # p1_left_g_name, gesture_name_r_p1
-            # gesture_name_l_p2, p2_right_g_name
         
-            # Crashes
+            # TODO: Can crash
             match self.state:
                 case rtg.GameState.IDLE:
                     p1_score = 0
@@ -117,22 +127,20 @@ class Game:
                     if count <= 0:
                         self.state = rtg.GameState.DISPLAY_GESTURE
                     else:
-                        countdown_display_str = f"Starting game with {number_rounds} rounds..."
-                        frame, _ = hv.draw_text_bottom_left(frame, countdown_display_str, self.config.font, 1, 2, (0, 0, 0))
-                        frame, _ = hv.draw_text_centered(frame, f"{count}", self.config.font, 4, 2, (0, 0, 0))
+                        frame = self.hud.draw_countdown_page(frame, number_rounds, count)
 
                 case rtg.GameState.DISPLAY_GESTURE:
-                    compare_gesture_l = hv.get_random_gesture([hv.Gesture.FLIPOFF, hv.Gesture.OUT_OF_FRAME])
-                    compare_gesture_r = hv.get_random_gesture([hv.Gesture.FLIPOFF, hv.Gesture.OUT_OF_FRAME])
+                    target_gest_left = hv.get_random_gesture([hv.Gesture.FLIPOFF, hv.Gesture.OUT_OF_FRAME])
+                    target_gest_right = hv.get_random_gesture([hv.Gesture.FLIPOFF, hv.Gesture.OUT_OF_FRAME])
                     
                     left_icon = self.icons.icon_for_gesture(
                         hv.Handedness.LEFT, 
-                        compare_gesture_l, 
+                        target_gest_left, 
                         self.config.gesture_icon_scale
                     )
                     right_icon = self.icons.icon_for_gesture(
                         hv.Handedness.RIGHT, 
-                        compare_gesture_r, 
+                        target_gest_right, 
                         self.config.gesture_icon_scale
                     )
                     self.state = rtg.GameState.CHECK_GESTURE
@@ -140,8 +148,8 @@ class Game:
                 case rtg.GameState.CHECK_GESTURE:
                     frame = rtg.draw_gesture_icons(frame, left_icon, right_icon)
                     
-                    p1_correct = p1_left_g == compare_gesture_l and p1_right_g == compare_gesture_r
-                    p2_correct = p2_left_g == compare_gesture_l and p2_right_g == compare_gesture_r
+                    p1_correct = p1_left_g == target_gest_left and p1_right_g == target_gest_right
+                    p2_correct = p2_left_g == target_gest_left and p2_right_g == target_gest_right
 
                     if p1_correct and p2_correct:
                         print("TIE")
@@ -189,7 +197,14 @@ class Game:
             
             cv.imshow("Game Window", frame)
 
-            if cv.waitKey(1) & 0xff == ord('q'):
+            key = cv.waitKey(1)
+
+            if key & 0xff == ord(self.show_fps_key):
+                print("Toggling show fps!")
+                self.show_fps = not self.show_fps
+
+            if key & 0xff == ord('q'):
                 self.cam.release()
                 break
+
     

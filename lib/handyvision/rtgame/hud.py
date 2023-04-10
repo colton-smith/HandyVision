@@ -9,15 +9,50 @@ import handyvision.rtgame as rtg
 
 
 class HUD:
-    """ Track game HUD elements
+    """ Track and draw game HUD elements on camera frame
     """
-    def __init__(self):
-        pass
+    def __init__(self, frame_height, frame_width):
 
-    def draw_fps(frame: cv.Mat) -> cv.Mat:
+        self.frame_height = frame_height
+        self.frame_width = frame_width
+
+        self.player1_str = "P1"
+        self.player2_str = "P2"
+
+        self.fps_font = hv.Font(
+            cv.FONT_HERSHEY_COMPLEX_SMALL,
+            1,
+            2,
+            (0, 0, 0)
+        )
+
+        self.countdown_text_font = hv.Font(
+            cv.FONT_HERSHEY_COMPLEX,
+            0.75,
+            2,
+            (0, 0, 0)
+        )
+        
+        self.countdown_number_font = hv.Font(
+            cv.FONT_HERSHEY_COMPLEX,
+            4,
+            5,
+            (0, 0, 0)
+        )
+
+    def draw_fps(self, frame: cv.Mat, fps: float) -> cv.Mat:
         """ Draw FPS
         """
-        pass
+        fps_string = f"{fps:0.0f}"
+        return hv.draw_text_top_right(frame, fps_string, self.fps_font)
+        
+    def draw_countdown_page(self, frame: cv.Mat, rounds: int, count: int) -> cv.Mat:
+        """ Draw countdown page on frame
+        """
+        countdown_display_str = f"Starting game with {rounds} rounds..."
+        frame, _ = hv.draw_text_bottom_left(frame, countdown_display_str, self.countdown_text_font)
+        frame, _ = hv.draw_text_centered(frame, f"{count}", self.countdown_number_font)
+        return frame
 
 
 def draw_gesture_icons(frame: cv.Mat, left: cv.Mat, right: cv.Mat) -> cv.Mat:

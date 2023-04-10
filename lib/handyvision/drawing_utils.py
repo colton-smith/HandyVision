@@ -12,6 +12,14 @@ class HorizontalHalf(IntEnum):
     RIGHT = 1
 
 
+class Font:
+    def __init__(self, face, scale, thickness, color):
+        self.face = face
+        self.scale = scale
+        self.thickness = thickness
+        self.color = color
+
+
 class LineOptions: 
     def __init__(self, color = None, thickness = None):
         default_color = (255, 255, 255)
@@ -37,11 +45,11 @@ def draw_center_line(frame: cv.Mat, options: LineOptions) -> cv.Mat:
     return frame
 
 
-def draw_text_centered(frame: cv.Mat, text: str, font, scale: float = 1, thickness = 1, color = (255, 255, 255)):
+def draw_text_centered(frame: cv.Mat, text: str, font: Font):
     """ Draw text centered in the frame, return frame, text_size
     """
     rows = frame.shape[0]
-    text_size, baseline = cv.getTextSize(text, font, scale, thickness)
+    text_size, baseline = cv.getTextSize(text, font.face, font.scale, font.thickness)
     
     fh, fw, _ = frame.shape
     origin = fw // 2, fh // 2
@@ -53,53 +61,50 @@ def draw_text_centered(frame: cv.Mat, text: str, font, scale: float = 1, thickne
         frame, 
         text, 
         org=(text_left, text_top), 
-        fontFace=font,
-        fontScale=scale,
-        thickness=thickness,
-        color=color
+        fontFace=font.face,
+        fontScale=font.scale,
+        thickness=font.thickness,
+        color=font.color
     )
 
     return frame, text_size
 
 
-def draw_text_bottom_left(frame: cv.Mat, text: str, font, scale: float = 1, thickness = 1, color = (255, 255, 255)):
+def draw_text_bottom_left(frame: cv.Mat, text: str, font: Font):
     """ Draw text anchored at bottom left of frame, return frame, text_size
     """
     rows = frame.shape[0]
-    text_size, baseline = cv.getTextSize(text, font, scale, thickness)
+    text_size, baseline = cv.getTextSize(text, font.face, font.scale, font.thickness)
     frame = cv.putText(
         frame, 
         text, 
         org=(0, rows - 1 - baseline), 
-        fontFace=font,
-        fontScale=scale,
-        thickness=thickness,
-        color=color
+        fontFace=font.face,
+        fontScale=font.scale,
+        thickness=font.thickness,
+        color=font.color
     )
 
     return frame, text_size
 
 
-def draw_text_top_right_of_frame(frame: cv.Mat, text: str, font, scale: float = 1, thickness = 1, color = (255, 255, 255)):
+def draw_text_top_right(frame: cv.Mat, text: str, font: Font):
+    """ Draw text at the top right of the frame
     """
-    """
-    rows = frame.shape[0]
-    text_size, baseline = cv.getTextSize(text, font, scale, thickness)
-    
+    text_size, baseline = cv.getTextSize(text, font.face, font.scale, font.thickness)
     fh, fw, _ = frame.shape
-    origin = fw // 2, fh // 2
 
-    text_left = origin[0] - text_size[0] // 2
-    text_top = origin[1] + text_size[1] // 2 - baseline
+    text_left =  fw - text_size[0] - 1
+    text_bot = text_size[1] + baseline 
 
     frame = cv.putText(
         frame, 
         text, 
-        org=(text_left, text_top), 
-        fontFace=font,
-        fontScale=scale,
-        thickness=thickness,
-        color=color
+        org=(text_left, text_bot), 
+        fontFace=font.face,
+        fontScale=font.scale,
+        thickness=font.thickness,
+        color=font.color
     )
 
     return frame, text_size
