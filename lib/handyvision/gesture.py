@@ -5,6 +5,8 @@ Hand gesture utilities.
 import os
 
 import cv2 as cv
+import numpy as np
+
 import json
 
 from typing import Dict
@@ -16,7 +18,6 @@ from .landmarks import *
 class Gesture(str, Enum):
     """ String enum representing gestures.
     """
-    ARTHRITIS = "ARTHRITIS"
     FIST = "FIST"
     POINT = "POINT"
     PEACE = "PEACE"
@@ -36,7 +37,6 @@ class Gesture(str, Enum):
 
 
 gesture_map = {
-    (False, True, False, True, False): Gesture.ARTHRITIS,
     (False, False, False, False, False): Gesture.FIST,
     (False, True , False, False, False): Gesture.POINT,
     (False, True , True , False, False): Gesture.PEACE,
@@ -67,16 +67,20 @@ class IconManager:
         self.gesture_icon_map_right = {}
         self.__load_assets()
 
-    def icon_for_gesture(self, handedness: Handedness, gesture: Gesture) -> cv.Mat:
+    def icon_for_gesture(self, handedness: Handedness, gesture: Gesture, scale: Tuple[int, int] = None) -> cv.Mat:
         """ Get image for handedness and gesture
 
         Returns None if there is no icon for gesture.
+        Size -> (width, height)
         """
         if handedness == Handedness.LEFT and gesture in self.gesture_icon_map_left:
-            return self.gesture_icon_map_left[gesture]
+            img = self.gesture_icon_map_left[gesture]
+            return img if scale is None else cv.resize(img, None, fx = scale[0], fy = scale[1])
         elif handedness == Handedness.RIGHT and gesture in self.gesture_icon_map_right:
-            return self.gesture_icon_map_right[gesture]
+            img = self.gesture_icon_map_right[gesture]
+            return img if scale is None else cv.resize(img, None, fx = scale[0], fy = scale[1])
         else:
+            print(f"No icon for gesture: {gesture.name}")
             return None
 
     def __load_assets(self):
@@ -94,8 +98,8 @@ class IconManager:
                 gesture = mapping["Gesture"]
                 left_file = os.path.join(self.asset_folder, left_folder, file)
                 right_file = os.path.join(self.asset_folder, right_folder, file)
-                left_image = cv.imread(left_file)
-                right_image = cv.imread(right_file)
+                left_image = cv.imread(left_file, cv.IMREAD_UNCHANGED)
+                right_image = cv.imread(right_file, cv.IMREAD_UNCHANGED)
                 self.gesture_icon_map_left[Gesture[gesture]] = left_image
                 self.gesture_icon_map_right[Gesture[gesture]] = right_image
 
@@ -133,3 +137,10 @@ def get_string_from_gesture(gesture: Gesture) -> str:
         return "NONE"
     else:
         return gesture.name
+
+
+def get_random_gesture(exclude: List[Gesture] = []) -> Gesture:
+    """ Return a random gesture 
+    """
+    possible_gestures = [g for g in Gesture if g not in exclude]
+    return possible_gestures[np.random.randint(0, len(possible_gestures))]

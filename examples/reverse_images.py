@@ -39,6 +39,6 @@ if __name__ == "__main__":
         print(f"Output image: {output_path}")
         print("---")
 
-        img_in = cv.imread(input_path)
+        img_in = cv.imread(input_path, cv.IMREAD_UNCHANGED)
         img_out = cv.flip(img_in, 1)
         cv.imwrite(output_path, img_out)

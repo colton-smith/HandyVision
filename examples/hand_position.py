@@ -387,8 +387,10 @@ def main():
 
             case 'COUNTDOWN':
                 coordinates_count = (frame_width//2 - 50, 200)
-                coordinates_gesture_l = (frame_width//2 - 50, 400)
-                coordinates_gesture_r = (frame_width//2 - 50, 500)
+
+                # Bottom left
+                coordinates_gesture_l = (10, int(0.9 * frame_height))
+                coordinates_gesture_r = (10, coordinates_gesture_l[1] + 20)
                 count = int(time.time() - countdown_start_time)
                 if count <= 2:
                     frame = cv.putText(frame, str(count+1), coordinates_count, font, 5, (0,0,255), 3, cv.LINE_AA)

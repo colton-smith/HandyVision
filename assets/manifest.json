@@ -1,12 +1,11 @@
 {
     "gestures":
     {
-        "LEFT_FOLDER": "gesture_icons/original",
-        "RIGHT_FOLDER": "gesture_icons/flipped",
+        "LEFT_FOLDER": "gesture_icons/left",
+        "RIGHT_FOLDER": "gesture_icons/right",
 
         "PATH_GESTURE_MAPPING": 
         [
-            {"File": "arthritis.png", "Gesture": "ARTHRITIS"},
             {"File": "fist.png", "Gesture": "FIST"},
             {"File": "four.png", "Gesture": "FOUR"},
             {"File": "gun-double-barrel.png", "Gesture": "GUN_DOUBLE"},
