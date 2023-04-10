@@ -110,19 +110,6 @@ class Game:
             # Draw help on top of other hid items
             if self.show_help:
                 self.hud.draw_help_box(frame)
-
-            # Game State Machine
-            # 1 --> Wait until same gestures are held by all 4 hands at the same time for 2 seconds
-            #       - If 'point' is displayed, game to 4
-            #       - If 'peace' is displayed, game to 8
-            #       - If 'three' is displayed, game to 12
-            #       - If 'four'  is displayed, game to 16
-            #       - If 'spread' is displayed, game to 20
-            # 2 --> Start countdown
-            # 3 --> Display symbols (write name of left and right gesture) and detect who displayed first
-            #       - Add point to winner, check if score is equal to win_number
-            #       - if points = win_number --> Win screen
-            #       - if points != win_number --> Start countdown
         
             # TODO: Can crash
             match self.state:
@@ -222,7 +209,7 @@ class Game:
                     if winscreen_currenttime - winscreen_starttime > 5:
                         self.state = rtg.GameState.IDLE
             
-            cv.imshow("Game Window", frame)
+            cv.imshow("HandyVision!", frame)
 
             key = cv.waitKey(1)
             if key & 0xff == ord(self.show_debug_info_key):
