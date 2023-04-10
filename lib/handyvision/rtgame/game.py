@@ -61,6 +61,8 @@ class Game:
         self.p1_score = 0
         self.p2_score = 0
 
+        self.start_time = time.time()
+
     def run(self):
         if not self.init_success:
             print("Not initialized, can not run")
@@ -111,7 +113,6 @@ class Game:
             if self.show_help:
                 self.hud.draw_help_box(frame)
         
-            # TODO: Can crash
             match self.state:
                 case rtg.GameState.IDLE:
                     self.hud.draw_idle_text(frame)
@@ -119,13 +120,12 @@ class Game:
                     self.p2_score = 0
                     p1_winner = False
                     p2_winner = False
-                    # TODO: This crashes if hands are in frame with the same
-                    # pose at the start, start_time ref before assignment
+
                     if not (p1_left_g == p2_right_g != hv.Gesture.OUT_OF_FRAME):
-                        start_time = time.time()
-                    elif p1_left_g == p2_right_g != hv.Gesture.OUT_OF_FRAME:
+                        self.start_time = time.time()
+                    elif (p1_left_g == p2_right_g != hv.Gesture.OUT_OF_FRAME):
                         current_time = time.time()
-                        if current_time - start_time >= 2:
+                        if current_time - self.start_time >= 2:
                             if p1_left_g not in self.config.gest_to_rounds:
                                 number_rounds = self.config.default_num_rounds
                             else:
