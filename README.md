@@ -1,6 +1,11 @@
 # HandyVision
 ECE 8410 - Computer Vision Project
 
+Colton Smith  
+Devin McLoughlin  
+Jillian Power  
+Matt Crewe  
+
 # Requirements
 - Python 3.8+
 
@@ -12,6 +17,12 @@ ECE 8410 - Computer Vision Project
 ├── .gitignore                          | Tell git, "don't track transient generated files"
 ├── requirements.txt                    | Python package dependencies
 └── setup.sh                            | Install dependencies
+```
+
+# How to Run 
+After performing python setup below:
+```
+python game.py
 ```
 
 # Python Setup 
