@@ -1,6 +1,6 @@
 """ game.py
 
-Reaction time game using HandyVision hand psoe estimation.
+Reaction time game using HandyVision hand pose estimation.
 
 To run me:
 
